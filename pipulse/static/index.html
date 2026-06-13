@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiPulse // MISSION CONTROL</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="nasa-bg"></div>
+    <div class="scanlines"></div>
+    <div class="overlay"></div>
+
+    <main class="mission-control">
+        <header class="grid-span-all">
+            <div class="logo">PI<span class="highlight">PULSE</span> // <span class="sub-logo">CMD_CENTER_v2.0</span></div>
+            <div class="header-info">
+                <div id="uptime" class="terminal-text">UPTIME: 00:00:00</div>
+                <div id="clock" class="terminal-text bold">--:--:--</div>
+            </div>
+        </header>
+
+        <!-- Core Telemetry Row -->
+        <section class="widget-row core-telemetry">
+            <div class="widget gauge-widget" id="cpu-widget">
+                <div class="label">CPU_LOAD</div>
+                <div class="value">0%</div>
+                <div class="progress-container"><div class="fill"></div></div>
+            </div>
+            <div class="widget gauge-widget" id="mem-widget">
+                <div class="label">MEM_UTIL</div>
+                <div class="value">0%</div>
+                <div class="progress-container"><div class="fill"></div></div>
+            </div>
+            <div class="widget gauge-widget" id="temp-widget">
+                <div class="label">CORE_TEMP</div>
+                <div class="value">0°C</div>
+                <div class="progress-container"><div class="fill"></div></div>
+            </div>
+            <div class="widget gauge-widget" id="disk-widget">
+                <div class="label">DISK_USE</div>
+                <div class="value">0%</div>
+                <div class="progress-container"><div class="fill"></div></div>
+            </div>
+        </section>
+
+        <!-- Main Content Area -->
+        <div class="main-grid">
+            <!-- Spotify Section -->
+            <section class="widget spotify-widget" id="spotify-panel">
+                <div class="widget-header">SPOTIFY_LINK // LIVE</div>
+                <div class="spotify-content unconfigured">
+                    <div id="spotify-art" class="art-placeholder"></div>
+                    <div class="spotify-info">
+                        <div id="spotify-title">SYSTEM_IDLE</div>
+                        <div id="spotify-artist">NO_DATA_STREAM</div>
+                        <div class="spotify-progress-wrap">
+                            <div id="spotify-bar" class="fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pi-hole Section -->
+            <section class="widget pihole-widget" id="pihole-panel">
+                <div class="widget-header">SECURITY_GRID // PI-HOLE</div>
+                <div class="pihole-grid">
+                    <div class="pi-item">
+                        <div class="pi-label">QUERIES</div>
+                        <div id="pi-queries" class="pi-value terminal-text">0</div>
+                    </div>
+                    <div class="pi-item">
+                        <div class="pi-label">BLOCKED</div>
+                        <div id="pi-blocked" class="pi-value neon-pink">0</div>
+                    </div>
+                    <div class="pi-item grid-span-2">
+                        <div class="pi-label">PERCENTAGE_FILTERED</div>
+                        <div id="pi-percent" class="pi-value">0%</div>
+                        <div class="progress-container"><div id="pi-bar" class="fill"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- I/O Speed Section -->
+            <section class="widget io-widget">
+                <div class="widget-header">I/O_TRAFFIC // Mbps</div>
+                <div class="io-grid">
+                    <div class="io-item">
+                        <div class="label">UPLINK</div>
+                        <div id="net-up" class="value neon-pink">0.00</div>
+                    </div>
+                    <div class="io-item">
+                        <div class="label">DOWNLINK</div>
+                        <div id="net-down" class="value neon-green">0.00</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer / External Data -->
+        <footer class="grid-span-all">
+            <div class="external-info">
+                <div class="weather-brief" id="weather-data">--°C // STANDBY</div>
+                <div class="nasa-brief"><span class="highlight">NASA_APOD:</span> <span id="nasa-title">FETCHING_INTEL...</span></div>
+            </div>
+            <div class="ticker-wrap">
+                <div class="ticker" id="news-ticker">
+                    >> INITIALIZING SECURE LINK... >> SYSTEM READY... >> ALL GRIDS ACTIVE... >> MONITORING PI_PULSE...
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

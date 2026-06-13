@@ -1,0 +1,7 @@
+requests
+rich
+textual
+typer
+python-dotenv
+pandas
+sqlalchemy
