@@ -1,0 +1,11 @@
+[
+  {
+    "id": "20260612_183224_sql_e1910886",
+    "date": "2026-06-12T18:32:24.558017",
+    "language": "sql",
+    "mode": "quick",
+    "agent": "Ollama (tinyllama)",
+    "file": "/home/levimackay/AI-Projects/code-reviewer/history/20260612_183224_sql_e1910886.md",
+    "preview": "Sure, here's a fast and punchy code review of the provided sql code:  Issue 1: `SELECT * FROM users WHERE id = ?` should"
+  }
+]

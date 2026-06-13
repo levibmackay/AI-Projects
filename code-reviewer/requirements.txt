@@ -1,0 +1,7 @@
+groq
+google-generativeai
+ollama
+rich
+typer
+python-dotenv
+pygments
