@@ -1,20 +1,56 @@
-hey welcome to my AI projects repo
+# AI Projects
 
-this is where i keep all the random stuff i build when im not drowning in homework. im a computer science student at BYUI trying to learn as much as i can and build things that actually matter to me.
+A collection of tools I built as a Computer Science student at BYU-Idaho. Each project solves a real problem I was dealing with and gave me a chance to work with APIs, web scraping, and CLI tooling.
 
-right now the repo has two projects in it.
+---
 
+## Projects
 
-byui planner
+### byui-planner
 
-this one is probably my favorite. it pulls from the BYUI course schedule and rate my professor at the same time so you can actually figure out who the good professors are and when the good sections are. i like getting all my classes done in the morning and keeping fridays free so i built it to do that automatically. you just tell it what classes you have left and it does the rest.
+A command line tool for planning your class schedule at BYUI. It searches the live course schedule, pulls professor ratings from Rate My Professor, and filters sections based on your preferences like morning classes and no Friday schedule.
 
+**Usage**
 
-canvas risk
+```bash
+cd byui-planner
+python main.py search "CSE 212"
+python main.py plan --term "Fall Semester 2026"
+python main.py complete "CSE 111"
+python main.py remaining
+```
 
-this one hooks into the canvas API and helps you keep track of assignments and see where youre at risk of falling behind. basically a grade safety net. built it because i kept missing small assignments that killed my grade at the end of the semester.
+**Features**
+- Searches BYUI course schedule in real time
+- Fetches and caches Rate My Professor ratings for every professor
+- Filters for morning sections and Friday-free schedules by default
+- Tracks which courses you have left based on your degree requirements
 
+---
 
-more stuff coming
+### canvas-risk
 
-im always working on something. if you made it here feel free to look around and use anything that helps you out.
+A CLI tool that connects to the Canvas LMS API and helps you track where you are at risk of falling behind. It flags ungraded work, missing assignments, and grade trends so nothing sneaks up on you at the end of the semester.
+
+---
+
+## Tech Stack
+
+Python, Typer, Rich, Requests, BeautifulSoup, SQLAlchemy, RateMyProfessorAPI
+
+---
+
+## Setup
+
+Each project has its own virtual environment and requirements file.
+
+```bash
+cd byui-planner
+python3 -m venv venv
+venv/bin/pip install -r requirements.txt
+venv/bin/python main.py --help
+```
+
+---
+
+Built and maintained by Levi Mackay
