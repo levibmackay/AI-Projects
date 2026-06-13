@@ -1,0 +1,12 @@
+{
+  "program": "Your Major Here",
+  "required_courses": [
+    "CS 111",
+    "CS 112",
+    "CS 165",
+    "CS 246",
+    "CS 345",
+    "CS 460"
+  ],
+  "_note": "Edit this file to match your actual degree requirements. Use BYUI course codes (e.g. 'CS 246', 'MATH 221')."
+}

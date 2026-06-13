@@ -1,0 +1,6 @@
+requests
+beautifulsoup4
+rich
+typer
+python-dotenv
+RateMyProfessorAPI
