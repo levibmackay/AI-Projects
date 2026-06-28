@@ -69,6 +69,28 @@ A CLI tool that connects to the Canvas LMS API and helps you track where you are
 
 ---
 
+### canvas-ta-tool
+
+A terminal dashboard for TAs and instructors to manage a Canvas course. Shows missing assignments, ungraded submissions, grade breakdowns, and individual student lookups — all from the command line with a clean Rich UI.
+
+**Usage**
+
+```bash
+cd canvas-ta-tool
+cp .env.example .env   # add your Canvas URL and API token
+python canvas_ta.py
+```
+
+**Features**
+- Missing & Late Assignments — see every student who has missing or late work, sorted by severity
+- Needs Grading — grouped by assignment with oldest-submission age so you know what to tackle first
+- Grade Analysis — lists every student below an A and their biggest point losses, closest gap first
+- Student Lookup — search by name for a full per-assignment breakdown with scores and statuses
+- Refresh data or switch courses without restarting
+- Paginated Canvas API client handles any class size
+
+---
+
 ## Tech Stack
 
 Python, Typer, Rich, Requests, BeautifulSoup, SQLAlchemy, Groq, Gemini, Ollama, RateMyProfessorAPI
