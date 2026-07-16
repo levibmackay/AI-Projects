@@ -117,3 +117,5 @@ CI runs on every pull request, push to `main`, and version tag (`v*`) via [`.git
 ---
 
 Built and maintained by Levi Mackay
+
+_Last updated: 2026-07-16_
