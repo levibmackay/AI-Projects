@@ -56,6 +56,13 @@ python main.py risk-report
 python main.py ungraded
 ```
 
+## Testing
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q
+```
+
 ## Configuration
 
 | Variable | Description |

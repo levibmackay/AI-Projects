@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
-from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
@@ -21,8 +20,8 @@ from rich.text import Text
 from rich import box
 
 from canvas_api import CanvasAPI
+from canvas_config import ConfigError, load_canvas_config
 
-load_dotenv()
 console = Console()
 NOW = datetime.now(timezone.utc)
 
@@ -1227,10 +1226,9 @@ def main_menu(api: CanvasAPI, course: Dict) -> str:
 # ─── Entry point ─────────────────────────────────────────────────────────────
 
 def main():
-    base_url = os.getenv('CANVAS_URL')
-    token    = os.getenv('CANVAS_TOKEN')
-
-    if not base_url or not token:
+    try:
+        config = load_canvas_config()
+    except ConfigError:
         console.print(Panel(
             '[red]Missing configuration![/red]\n\n'
             'Create a [cyan].env[/cyan] file in this directory with:\n\n'
@@ -1243,7 +1241,7 @@ def main():
         ))
         sys.exit(1)
 
-    api = CanvasAPI(base_url, token)
+    api = CanvasAPI(config.base_url, config.token)
 
     try:
         while True:

@@ -1,0 +1,60 @@
+name: Python CI
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  canvas-risk-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: canvas-risk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run tests
+        run: pytest -q
+
+  project-smoke-checks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - byui-planner
+          - code-reviewer
+          - canvas-ta-tool
+          - pipulse
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Syntax smoke check
+        run: python -m compileall -q .
+
+  release-quality-gate:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - canvas-risk-tests
+      - project-smoke-checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm release quality gates passed
+        run: echo "Release tag validation passed."

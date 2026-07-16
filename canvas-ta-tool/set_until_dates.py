@@ -11,20 +11,18 @@ Usage:
     python3 set_until_dates.py --apply      # actually performs the updates
 """
 
-import os
 import re
 import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from dotenv import load_dotenv
 from rich import box
 from rich.console import Console
 from rich.table import Table
 
 from canvas_api import CanvasAPI
+from canvas_config import ConfigError, load_canvas_config
 
-load_dotenv()
 console = Console(width=190)
 
 COURSE_NAME_MATCH = 'cse 111'
@@ -86,13 +84,13 @@ def pick_course(api: CanvasAPI):
 def main():
     apply_changes = '--apply' in sys.argv
 
-    base_url = os.getenv('CANVAS_URL')
-    token = os.getenv('CANVAS_TOKEN')
-    if not base_url or not token:
-        console.print('[red]Missing CANVAS_URL / CANVAS_TOKEN in .env[/red]')
+    try:
+        config = load_canvas_config()
+    except ConfigError as exc:
+        console.print(f'[red]{exc}[/red]')
         sys.exit(1)
 
-    api = CanvasAPI(base_url, token)
+    api = CanvasAPI(config.base_url, config.token)
 
     course = pick_course(api)
     course_id = course['id']

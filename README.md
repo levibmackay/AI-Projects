@@ -107,4 +107,13 @@ venv/bin/python main.py --help
 
 ---
 
+## Development
+
+Contributing and development standards are documented in [CONTRIBUTING.md](./CONTRIBUTING.md).
+Release notes and upcoming changes are tracked in [CHANGELOG.md](./CHANGELOG.md).
+
+CI runs on every pull request, push to `main`, and version tag (`v*`) via [`.github/workflows/python-ci.yml`](./.github/workflows/python-ci.yml). Before opening a PR, run the same checks locally for any project you touched.
+
+---
+
 Built and maintained by Levi Mackay

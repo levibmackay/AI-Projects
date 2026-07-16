@@ -5,10 +5,10 @@ import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from typing import Optional
+from typing import Dict
 from dotenv import load_dotenv
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth, SpotifyClientCredentials
+from spotipy.exceptions import SpotifyException
 
 load_dotenv()
 
@@ -24,6 +24,17 @@ net_state = {
     "last_bytes_recv": psutil.net_io_counters().bytes_recv,
     "last_time": time.time()
 }
+
+
+def missing_env_vars(required_names) -> list[str]:
+    return [name for name in required_names if not os.getenv(name)]
+
+
+def unconfigured_response(service_name: str, missing: list[str]) -> Dict[str, str]:
+    if not missing:
+        return {"status": "unconfigured"}
+    joined = ", ".join(missing)
+    return {"status": "unconfigured", "message": f"{service_name} missing env vars: {joined}"}
 
 @app.get("/")
 async def read_index():
@@ -81,19 +92,27 @@ async def get_spotify():
     client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
     refresh_token = os.getenv("SPOTIPY_REFRESH_TOKEN")
 
-    if not all([client_id, client_secret, refresh_token]):
-        return {"status": "unconfigured"}
+    missing = missing_env_vars(["SPOTIPY_CLIENT_ID", "SPOTIPY_CLIENT_SECRET", "SPOTIPY_REFRESH_TOKEN"])
+    if missing:
+        return unconfigured_response("Spotify", missing)
 
     try:
         # Simple manual token refresh for headless operation
         auth_url = "https://accounts.spotify.com/api/token"
-        resp = requests.post(auth_url, data={
-            "grant_type": "refresh_token",
-            "refresh_token": refresh_token,
-            "client_id": client_id,
-            "client_secret": client_secret
-        })
+        resp = requests.post(
+            auth_url,
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+                "client_id": client_id,
+                "client_secret": client_secret
+            },
+            timeout=5,
+        )
+        resp.raise_for_status()
         token = resp.json().get("access_token")
+        if not token:
+            return {"status": "error", "message": "Spotify token refresh did not return an access token."}
         
         sp = spotipy.Spotify(auth=token)
         current = sp.current_playback()
@@ -111,8 +130,12 @@ async def get_spotify():
                 "is_playing": current['is_playing']
             }
         return {"status": "idle"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except requests.RequestException as exc:
+        return {"status": "error", "message": f"Unable to reach Spotify auth service: {exc}"}
+    except SpotifyException as exc:
+        return {"status": "error", "message": f"Spotify API error: {exc}"}
+    except ValueError as exc:
+        return {"status": "error", "message": f"Invalid Spotify response: {exc}"}
 
 @app.get("/api/pihole")
 async def get_pihole():
@@ -120,47 +143,53 @@ async def get_pihole():
     url = os.getenv("PIHOLE_URL")
     token = os.getenv("PIHOLE_API_TOKEN")
 
-    if not url:
-        return {"status": "unconfigured"}
+    missing = missing_env_vars(["PIHOLE_URL", "PIHOLE_API_TOKEN"])
+    if missing:
+        return unconfigured_response("Pi-hole", missing)
 
     try:
         full_url = f"{url}?summary&auth={token}"
         resp = requests.get(full_url, timeout=3)
-        if resp.status_code == 200:
-            data = resp.json()
-            return {
-                "status": "online",
-                "queries": data.get("dns_queries_today"),
-                "blocked": data.get("ads_blocked_today"),
-                "percent": data.get("ads_percentage_today"),
-                "unique_clients": data.get("unique_clients")
-            }
-        return {"status": "offline"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+        resp.raise_for_status()
+        data = resp.json()
+        return {
+            "status": "online",
+            "queries": data.get("dns_queries_today"),
+            "blocked": data.get("ads_blocked_today"),
+            "percent": data.get("ads_percentage_today"),
+            "unique_clients": data.get("unique_clients")
+        }
+    except requests.RequestException as exc:
+        return {"status": "error", "message": f"Unable to reach Pi-hole: {exc}"}
+    except ValueError as exc:
+        return {"status": "error", "message": f"Pi-hole returned invalid JSON: {exc}"}
 
 @app.get("/api/external")
 async def get_external_data():
     """Proxies NASA APOD and Weather."""
-    # (Same as before but combined with load_dotenv support)
     nasa_url = "https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY"
     weather_url = "https://wttr.in/?format=j1"
     
     data = {"nasa": {}, "weather": {}}
     try:
         nasa_resp = requests.get(nasa_url, timeout=5)
-        if nasa_resp.status_code == 200:
-            data["nasa"] = nasa_resp.json()
-            
+        nasa_resp.raise_for_status()
+        data["nasa"] = nasa_resp.json()
+    except (requests.RequestException, ValueError) as exc:
+        data["nasa_error"] = f"Unable to load NASA APOD data: {exc}"
+
+    try:
         weather_resp = requests.get(weather_url, timeout=5)
-        if weather_resp.status_code == 200:
-            w_json = weather_resp.json()
-            curr = w_json['current_condition'][0]
-            data["weather"] = {
-                "temp_C": curr['temp_C'],
-                "desc": curr['weatherDesc'][0]['value']
-            }
-    except: pass
+        weather_resp.raise_for_status()
+        w_json = weather_resp.json()
+        curr = w_json['current_condition'][0]
+        data["weather"] = {
+            "temp_C": curr['temp_C'],
+            "desc": curr['weatherDesc'][0]['value']
+        }
+    except (requests.RequestException, ValueError, KeyError, IndexError) as exc:
+        data["weather_error"] = f"Unable to load weather data: {exc}"
+
     return data
 
 if __name__ == "__main__":
