@@ -99,7 +99,7 @@ CI runs on every pull request, push to `main`, and version tag (`v*`) via [`.git
 
 ## Author
 
-Levi B Mackay ([@levibmackay](https://github.com/levibmackay))
+Levi B Mackay ([@levibmackay](https://github.com/levimackay))
 
 _Last updated: July 22, 2026_
 
