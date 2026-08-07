@@ -51,6 +51,20 @@ An AI-powered code review CLI that gives expert feedback on any file, backed by 
 
 See [code-reviewer/README.md](./code-reviewer/README.md) for full setup and usage.
 
+### [pocket-monsters](./pocket-monsters)
+
+**Pocket Monsters: Verdant** — a Game Boy styled monster-catching RPG that plays in a phone browser, on-screen console buttons and all. Grid overworld with seven maps, tall-grass encounters, turn-based battles with a type chart and status effects, catching, evolutions, a shop and healing centre, trainer line-of-sight, and `localStorage` saves. It ships as one HTML file with no build step and no external assets — the tiles, walking sprites, monster sprites, 5x7 bitmap font, and chiptune music are all generated in JavaScript at runtime.
+
+**Tech stack:** HTML5 Canvas, vanilla JavaScript, Web Audio API (verified with Playwright)
+
+**Run:**
+```bash
+cd pocket-monsters
+python3 -m http.server 8000   # then open http://localhost:8000
+```
+
+Or just open `pocket-monsters/index.html` directly. On iOS, Share -> Add to Home Screen makes it launch fullscreen like an app.
+
 ### [pipulse](./pipulse)
 
 A FastAPI web service ("PiPulse Mission Control") that serves a small dashboard for live system monitoring (CPU, memory, disk, temperature, and network I/O via psutil), plus optional integrations that degrade gracefully to an "unconfigured" status when their env vars aren't set: Spotify now-playing, Pi-hole query stats, and a NASA APOD/weather proxy. Intended to run as a background service on a Raspberry Pi (see `pipulse.service`, `install.sh`).
@@ -70,7 +84,7 @@ venv/bin/python main.py   # serves on http://0.0.0.0:8000
 
 ## Tech stack overview
 
-Every project here is a Python CLI, TUI, or lightweight service — most built on Typer and/or Rich for their terminal interfaces, with `python-dotenv` for local configuration. Beyond that shared foundation, each project has its own purpose-specific dependencies (web scraping, Canvas API clients, AI provider SDKs, FastAPI), so there's no single unifying framework across the whole repo.
+Most projects here are Python CLIs, TUIs, or lightweight services — built on Typer and/or Rich for their terminal interfaces, with `python-dotenv` for local configuration. Beyond that shared foundation, each project has its own purpose-specific dependencies (web scraping, Canvas API clients, AI provider SDKs, FastAPI), so there's no single unifying framework across the whole repo. The one exception is `pocket-monsters`, which is a self-contained HTML/JavaScript game with no Python and no dependencies at all.
 
 ---
 

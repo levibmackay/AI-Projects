@@ -11,7 +11,7 @@ and release versions should follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- _Add new features here before cutting the next release._
+- `pocket-monsters`: **Pocket Monsters: Verdant**, a single-file Game Boy style monster-catching RPG playable in a mobile browser, with an on-screen console d-pad and A/B/START/SELECT buttons, seven maps, turn-based battles, catching, evolutions, and `localStorage` saves.
 
 ### Changed
 - _Add updates to existing behavior here._

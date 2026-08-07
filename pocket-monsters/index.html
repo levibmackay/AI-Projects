@@ -1,0 +1,2594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pocket Monsters: Verdant</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#15161b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Verdant">
+<meta name="description" content="A Game Boy style monster-catching RPG that plays in a phone browser, on-screen console buttons and all.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%230f380f'/><rect x='2' y='2' width='12' height='9' fill='%239bbc0f'/><circle cx='5' cy='13' r='1.6' fill='%239bbc0f'/><circle cx='11' cy='13' r='1.6' fill='%239bbc0f'/></svg>">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+  body{
+    background:#15161b;color:#cfd2d8;
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    display:flex;align-items:center;justify-content:center;
+    touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+
+  /* ---------------- console shell ---------------- */
+  #gb{
+    width:100%;height:100dvh;max-width:480px;
+    display:flex;flex-direction:column;align-items:stretch;
+    padding:calc(6px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
+    gap:6px;
+    background:linear-gradient(180deg,#dcd8cf 0%,#cbc7be 45%,#b6b2aa 100%);
+    box-shadow:inset 0 -7px 0 rgba(0,0,0,.16), inset 0 3px 0 rgba(255,255,255,.55);
+  }
+
+  /* ---------------- screen ---------------- */
+  #bezel{
+    flex:0 0 auto;position:relative;
+    background:#4a4a55;
+    border-radius:10px 10px 34px 10px;
+    padding:16px 18px 22px;
+    box-shadow:inset 0 2px 7px rgba(0,0,0,.55);
+  }
+  #bezel::before{
+    content:"DOT MATRIX WITH STEREO SOUND";
+    position:absolute;left:0;right:0;bottom:6px;text-align:center;
+    font-size:7px;letter-spacing:.14em;color:#b9b3c6;opacity:.7;
+  }
+  .led{
+    position:absolute;left:6px;top:50%;transform:translateY(-50%);
+    width:7px;height:7px;border-radius:50%;background:#8a2333;box-shadow:0 0 6px #d63a4d;
+  }
+  #lcd{
+    width:100%;aspect-ratio:160/144;max-height:100%;margin:0 auto;
+    background:#9bbc0f;border-radius:2px;overflow:hidden;
+  }
+  #screen{
+    display:block;width:100%;height:100%;object-fit:contain;
+    image-rendering:pixelated;image-rendering:crisp-edges;
+    background:#9bbc0f;
+  }
+
+  /* ---------------- controls ---------------- */
+  #pad{
+    flex:1 1 auto;min-height:0;
+    display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr auto;
+    align-items:center;justify-items:center;gap:4px;padding-top:4px;
+  }
+  #dpad{position:relative;width:min(38vw,150px);aspect-ratio:1;touch-action:none}
+  #dpad .arm{position:absolute;background:#2c2d33;box-shadow:inset 0 -3px 0 rgba(0,0,0,.45),0 2px 3px rgba(0,0,0,.35)}
+  #dpad .h{left:0;top:33.3%;width:100%;height:33.4%;border-radius:8px}
+  #dpad .v{left:33.3%;top:0;width:33.4%;height:100%;border-radius:8px}
+  #dpad .nub{position:absolute;left:39%;top:39%;width:22%;height:22%;border-radius:50%;background:#25262b;box-shadow:inset 0 2px 3px rgba(0,0,0,.6)}
+  #dpad.up .v,#dpad.down .v,#dpad.left .h,#dpad.right .h{background:#212227}
+
+  #ab{display:flex;align-items:center;gap:min(5vw,22px);transform:rotate(-18deg)}
+  .rbtn{
+    width:min(19vw,76px);aspect-ratio:1;border-radius:50%;border:0;
+    background:radial-gradient(circle at 34% 30%,#c2436a,#8d1e42 70%);
+    color:#f6dde5;font:700 clamp(16px,4.4vw,22px)/1 Arial;
+    box-shadow:0 5px 0 #5c1029,0 6px 9px rgba(0,0,0,.4);touch-action:none;
+  }
+  .rbtn.held{transform:translateY(4px);box-shadow:0 1px 0 #5c1029}
+  #sesta{grid-column:1 / -1;display:flex;justify-content:center;gap:min(9vw,36px);padding:2px 0 4px}
+  .pbtn{
+    border:0;padding:0;width:min(24vw,92px);height:24px;border-radius:12px;
+    background:#70707b;color:#eaeaf2;font:600 10px/24px Arial;letter-spacing:.14em;
+    transform:rotate(-18deg);box-shadow:0 3px 0 #3b3b44;touch-action:none;
+  }
+  .pbtn.held{transform:rotate(-18deg) translateY(2px);box-shadow:0 1px 0 #3b3b44}
+
+  /* ---------------- landscape ---------------- */
+  @media (orientation:landscape){
+    #gb{max-width:none;flex-direction:row;align-items:center;gap:12px;
+        padding:8px calc(10px + env(safe-area-inset-right)) 8px calc(10px + env(safe-area-inset-left))}
+    #bezel{order:2;flex:1 1 auto;height:100%;display:flex;align-items:center;justify-content:center;border-radius:10px}
+    #lcd{height:100%;width:auto;max-width:100%;aspect-ratio:160/144}
+    #pad{order:1;flex:0 0 auto;display:flex;flex-direction:column;gap:10px;width:min(26vw,190px)}
+    #dpad{width:min(22vw,150px)}
+    #ab{order:3;width:min(26vw,190px);justify-content:center}
+    #sesta{flex-direction:row;gap:14px}
+    .pbtn{width:min(12vw,84px)}
+  }
+</style>
+</head>
+<body>
+<div id="gb">
+  <div id="bezel">
+    <span class="led"></span>
+    <div id="lcd"><canvas id="screen" width="160" height="144"></canvas></div>
+  </div>
+  <div id="pad">
+    <div id="dpad" aria-label="direction pad">
+      <div class="arm h"></div><div class="arm v"></div><div class="nub"></div>
+    </div>
+    <div id="ab">
+      <button class="rbtn" data-key="b" aria-label="B button">B</button>
+      <button class="rbtn" data-key="a" aria-label="A button">A</button>
+    </div>
+    <div id="sesta">
+      <button class="pbtn" data-key="select" aria-label="Select">SELECT</button>
+      <button class="pbtn" data-key="start" aria-label="Start">START</button>
+    </div>
+  </div>
+</div>
+<script>
+"use strict";
+/* ============================================================
+   Pocket Monsters: Verdant
+   A Game Boy styled monster-catching RPG. Everything -- tiles,
+   sprites, font, music -- is generated at runtime, so the game
+   is a single file with no external assets.
+   ============================================================ */
+
+/* The page may be served inside a host that supplies its own <head>,
+   so make sure the phone viewport is set the way the console needs. */
+(function () {
+  let m = document.querySelector('meta[name="viewport"]');
+  if (!m) { m = document.createElement('meta'); m.name = 'viewport'; document.head.appendChild(m); }
+  m.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+  document.documentElement.style.height = '100%';
+  document.body.style.margin = '0';
+  document.body.style.overflow = 'hidden';
+})();
+
+/* ---------------- screen ---------------- */
+const W = 160, H = 144, TS = 16;
+const PAL = ['#9bbc0f', '#8bac0f', '#306230', '#0f380f']; // lightest -> darkest
+const cvs = document.getElementById('screen');
+const ctx = cvs.getContext('2d', { alpha: false });
+ctx.imageSmoothingEnabled = false;
+
+function clear(shade) { ctx.fillStyle = PAL[shade || 0]; ctx.fillRect(0, 0, W, H); }
+function rect(x, y, w, h, shade) { ctx.fillStyle = PAL[shade]; ctx.fillRect(x | 0, y | 0, w | 0, h | 0); }
+function frameRect(x, y, w, h, shade) {
+  rect(x, y, w, 1, shade); rect(x, y + h - 1, w, 1, shade);
+  rect(x, y, 1, h, shade); rect(x + w - 1, y, 1, h, shade);
+}
+
+/* ---------------- 1-bit font ----------------
+   A hand-drawn 5x7 bitmap font. Rolling our own means the text
+   looks identical on every device instead of depending on
+   whatever the browser calls "monospace". Each glyph is seven
+   base-32 characters, one per row of five pixels. */
+const FONT_W = 5, FONT_H = 7, ADV = 6;
+const B32 = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
+const FONT = {
+  ' ': '0000000',
+  'A': 'EHHVHHH',
+  'B': 'UHHUHHU',
+  'C': 'EHGGGHE',
+  'D': 'UHHHHHU',
+  'E': 'VGGUGGV',
+  'F': 'VGGUGGG',
+  'G': 'EHGNHHF',
+  'H': 'HHHVHHH',
+  'I': 'V44444V',
+  'J': '72222IC',
+  'K': 'HIKOKIH',
+  'L': 'GGGGGGV',
+  'M': 'HRLLHHH',
+  'N': 'HPLJHHH',
+  'O': 'EHHHHHE',
+  'P': 'UHHUGGG',
+  'Q': 'EHHHLID',
+  'R': 'UHHUKIH',
+  'S': 'FGGE11U',
+  'T': 'V444444',
+  'U': 'HHHHHHE',
+  'V': 'HHHHHA4',
+  'W': 'HHHLLRH',
+  'X': 'HHA4AHH',
+  'Y': 'HHA4444',
+  'Z': 'V1248GV',
+  'a': '00E1FHF',
+  'b': 'GGUHHHU',
+  'c': '00FGGGF',
+  'd': '11FHHHF',
+  'e': '00EHVGE',
+  'f': '698S888',
+  'g': '0FHHF1E',
+  'h': 'GGUHHHH',
+  'i': '40C444E',
+  'j': '20622IC',
+  'k': 'GGIKOKI',
+  'l': 'C44444E',
+  'm': '00QLLLL',
+  'n': '00UHHHH',
+  'o': '00EHHHE',
+  'p': '0UHHUGG',
+  'q': '0FHHF11',
+  'r': '00MPGGG',
+  's': '00FGE1U',
+  't': '88S8896',
+  'u': '00HHHJD',
+  'v': '00HHHA4',
+  'w': '00HHLLA',
+  'x': '00HA4AH',
+  'y': '0HHHF1E',
+  'z': '00V248V',
+  '0': 'EJJLPPE',
+  '1': '4C4444E',
+  '2': 'EH1248V',
+  '3': 'V2421HE',
+  '4': '26AIV22',
+  '5': 'VGU11HE',
+  '6': '68GUHHE',
+  '7': 'V124888',
+  '8': 'EHHEHHE',
+  '9': 'EHHF12C',
+  '!': '4444404',
+  '?': 'EH12404',
+  '.': '00000CC',
+  ',': '0000C48',
+  ':': '0CC0CC0',
+  ';': '0CC0C48',
+  '\'': '4480000',
+  '"': 'AAA0000',
+  '-': '000V000',
+  '/': '11248GG',
+  '(': '2488842',
+  ')': '8422248',
+  '$': '4FKE5U4',
+  '*': '0LEVEL0',
+  '<': '248G842',
+  '>': '8421248',
+  '+': '044V440',
+  '=': '00V0V00',
+  '%': 'PQ248BJ',
+  '_': '000000V',
+  '#': 'AAVAVAA'
+};
+const glyphCache = new Map();
+
+function hexToRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+
+function glyph(ch, shade) {
+  const key = ch + shade;
+  let g = glyphCache.get(key);
+  if (g) return g;
+  const data = FONT[ch] || FONT['?'];
+  const c = document.createElement('canvas');
+  c.width = FONT_W; c.height = FONT_H;
+  const g2 = c.getContext('2d');
+  const img = g2.createImageData(FONT_W, FONT_H);
+  const col = hexToRgb(PAL[shade]);
+  for (let y = 0; y < FONT_H; y++) {
+    const bits = B32.indexOf(data[y]);
+    for (let x = 0; x < FONT_W; x++) {
+      if (bits & (1 << (FONT_W - 1 - x))) {
+        const i = (y * FONT_W + x) * 4;
+        img.data[i] = col[0]; img.data[i + 1] = col[1]; img.data[i + 2] = col[2]; img.data[i + 3] = 255;
+      }
+    }
+  }
+  g2.putImageData(img, 0, 0);
+  glyphCache.set(key, c);
+  return c;
+}
+
+function text(str, x, y, shade) {
+  str = String(str);
+  const s = shade === undefined ? 3 : shade;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    if (ch !== ' ') ctx.drawImage(glyph(ch, s), (x + i * ADV) | 0, y | 0);
+  }
+}
+function textW(str) { return String(str).length * ADV; }
+function textRight(str, rx, y, shade) { text(str, rx - textW(str), y, shade); }
+function textBig(str, x, y, scale, shade) {
+  const s = shade === undefined ? 3 : shade;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === ' ') continue;
+    ctx.drawImage(glyph(str[i], s), (x + i * ADV * scale) | 0, y | 0, FONT_W * scale, FONT_H * scale);
+  }
+}
+const bigW = (str, scale) => str.length * ADV * scale;
+
+/* ---------------- windows ---------------- */
+function window9(x, y, w, h) {
+  rect(x, y, w, h, 0);
+  frameRect(x, y, w, h, 3);
+  frameRect(x + 1, y + 1, w - 2, h - 2, 0);
+  // knock the corners off so the box reads as rounded
+  rect(x, y, 1, 1, 0); rect(x + w - 1, y, 1, 1, 0);
+  rect(x, y + h - 1, 1, 1, 0); rect(x + w - 1, y + h - 1, 1, 1, 0);
+  rect(x + 1, y + 1, 1, 1, 3); rect(x + w - 2, y + 1, 1, 1, 3);
+  rect(x + 1, y + h - 2, 1, 1, 3); rect(x + w - 2, y + h - 2, 1, 1, 3);
+}
+
+/* ---------------- input ---------------- */
+const KEYS = ['up', 'down', 'left', 'right', 'a', 'b', 'start', 'select'];
+const held = {}, pressed = {}, consumed = {};
+KEYS.forEach(k => { held[k] = false; pressed[k] = false; });
+
+function setKey(k, down) {
+  if (!KEYS.includes(k)) return;
+  if (down && !held[k]) pressed[k] = true;
+  held[k] = down;
+  if (down) audio.unlock();
+}
+function down(k) { return held[k]; }
+function hit(k) { if (pressed[k] && !consumed[k]) { consumed[k] = true; return true; } return false; }
+function endFrame() { KEYS.forEach(k => { pressed[k] = false; consumed[k] = false; }); }
+
+const KEYMAP = {
+  ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+  w: 'up', s: 'down', a: 'left', d: 'right',
+  z: 'a', j: 'a', ' ': 'a', Enter: 'start', x: 'b', k: 'b', Backspace: 'b',
+  Shift: 'select', Tab: 'select'
+};
+addEventListener('keydown', e => {
+  const k = KEYMAP[e.key] || KEYMAP[e.key.toLowerCase()];
+  if (k) { e.preventDefault(); setKey(k, true); }
+}, { passive: false });
+addEventListener('keyup', e => {
+  const k = KEYMAP[e.key] || KEYMAP[e.key.toLowerCase()];
+  if (k) { e.preventDefault(); setKey(k, false); }
+}, { passive: false });
+
+/* touch buttons */
+document.querySelectorAll('[data-key]').forEach(el => {
+  const k = el.dataset.key;
+  const press = e => { e.preventDefault(); el.classList.add('held'); setKey(k, true); };
+  const release = e => { e.preventDefault(); el.classList.remove('held'); setKey(k, false); };
+  el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); press(e); });
+  el.addEventListener('pointerup', release);
+  el.addEventListener('pointercancel', release);
+  el.addEventListener('contextmenu', e => e.preventDefault());
+});
+
+/* d-pad: direction comes from thumb position, so sliding between
+   directions works the way it does on a real pad */
+(function () {
+  const pad = document.getElementById('dpad');
+  let active = null;
+  const clearDirs = () => {
+    ['up', 'down', 'left', 'right'].forEach(d => setKey(d, false));
+    pad.classList.remove('up', 'down', 'left', 'right');
+  };
+  const update = e => {
+    const r = pad.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2);
+    const dy = e.clientY - (r.top + r.height / 2);
+    const dead = r.width * 0.14;
+    clearDirs();
+    if (Math.hypot(dx, dy) < dead) return;
+    // allow one diagonal neighbour so the thumb does not have to be exact
+    const dirs = [];
+    if (Math.abs(dx) > Math.abs(dy) * 0.45) dirs.push(dx < 0 ? 'left' : 'right');
+    if (Math.abs(dy) > Math.abs(dx) * 0.45) dirs.push(dy < 0 ? 'up' : 'down');
+    const main = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down');
+    setKey(main, true);
+    pad.classList.add(main);
+    void dirs;
+  };
+  pad.addEventListener('pointerdown', e => {
+    e.preventDefault(); active = e.pointerId; pad.setPointerCapture(e.pointerId); update(e);
+  });
+  pad.addEventListener('pointermove', e => { if (active === e.pointerId) { e.preventDefault(); update(e); } });
+  const stop = e => { if (active === e.pointerId) { active = null; clearDirs(); } };
+  pad.addEventListener('pointerup', stop);
+  pad.addEventListener('pointercancel', stop);
+  pad.addEventListener('contextmenu', e => e.preventDefault());
+})();
+
+/* ---------------- audio: two square channels + noise ---------------- */
+const audio = {
+  ctxA: null, on: true, master: null, songTimer: 0, song: null, step: 0, tempo: 0,
+  unlock() {
+    if (this.ctxA) { if (this.ctxA.state === 'suspended') this.ctxA.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctxA = new AC();
+    this.master = this.ctxA.createGain();
+    this.master.gain.value = 0.09;
+    this.master.connect(this.ctxA.destination);
+  },
+  blip(freq, dur, type, vol) {
+    if (!this.ctxA || !this.on) return;
+    const t = this.ctxA.currentTime;
+    const o = this.ctxA.createOscillator(), g = this.ctxA.createGain();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol === undefined ? 0.5 : vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  sweep(f0, f1, dur, type) {
+    if (!this.ctxA || !this.on) return;
+    const t = this.ctxA.currentTime;
+    const o = this.ctxA.createOscillator(), g = this.ctxA.createGain();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    g.gain.setValueAtTime(0.4, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  noise(dur, vol) {
+    if (!this.ctxA || !this.on) return;
+    const sr = this.ctxA.sampleRate, len = Math.floor(sr * dur);
+    const buf = this.ctxA.createBuffer(1, len, sr), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = this.ctxA.createBufferSource(); s.buffer = buf;
+    const g = this.ctxA.createGain(); g.gain.value = vol === undefined ? 0.35 : vol;
+    s.connect(g); g.connect(this.master); s.start();
+  },
+  play(name) {
+    if (this.song === name) return;
+    this.song = name; this.step = 0; this.songTimer = 0;
+    this.tempo = SONGS[name] ? SONGS[name].tempo : 12;
+  },
+  tick() {
+    if (!this.on || !this.ctxA || !this.song || !SONGS[this.song]) return;
+    const s = SONGS[this.song];
+    if (--this.songTimer > 0) return;
+    this.songTimer = s.tempo;
+    const i = this.step % s.lead.length;
+    const n = s.lead[i], b = s.bass[i % s.bass.length];
+    if (n) this.blip(NOTE[n], s.tempo / 60 * 0.9, 'square', 0.22);
+    if (b) this.blip(NOTE[b] / 2, s.tempo / 60 * 1.1, 'triangle', 0.3);
+    this.step++;
+  },
+  sfx: {
+    cursor() { audio.blip(880, 0.05, 'square', 0.3); },
+    select() { audio.blip(1320, 0.07, 'square', 0.3); },
+    back() { audio.blip(440, 0.07, 'square', 0.25); },
+    hit() { audio.noise(0.12, 0.3); },
+    superHit() { audio.noise(0.22, 0.45); },
+    faint() { audio.sweep(600, 90, 0.5, 'square'); },
+    heal() { audio.blip(660, 0.08); setTimeout(() => audio.blip(880, 0.08), 90); setTimeout(() => audio.blip(1180, 0.14), 180); },
+    level() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => audio.blip(f, 0.12), i * 80)); },
+    ball() { audio.blip(520, 0.06); setTimeout(() => audio.blip(760, 0.06), 70); },
+    caught() { [784, 988, 1174, 1568].forEach((f, i) => setTimeout(() => audio.blip(f, 0.16), i * 130)); },
+    save() { audio.blip(1046, 0.1); setTimeout(() => audio.blip(1568, 0.16), 110); },
+    bump() { audio.blip(150, 0.05, 'square', 0.2); }
+  }
+};
+
+const NOTE = {
+  C3: 130.8, D3: 146.8, E3: 164.8, F3: 174.6, G3: 196.0, A3: 220.0, B3: 246.9,
+  C4: 261.6, D4: 293.7, E4: 329.6, F4: 349.2, G4: 392.0, A4: 440.0, B4: 493.9,
+  C5: 523.3, D5: 587.3, E5: 659.3, F5: 698.5, G5: 784.0, A5: 880.0, B5: 987.8, C6: 1046.5
+};
+const SONGS = {
+  town: {
+    tempo: 11,
+    lead: ['C5', 'E5', 'G5', 'E5', 'F5', 'A5', 'G5', 'E5', 'D5', 'F5', 'A5', 'F5', 'E5', 'D5', 'C5', 0],
+    bass: ['C3', 0, 'G3', 0, 'F3', 0, 'C3', 0]
+  },
+  route: {
+    tempo: 9,
+    lead: ['E5', 'G5', 'B5', 'G5', 'A5', 'C6', 'B5', 'G5', 'F5', 'A5', 'C6', 'A5', 'G5', 'E5', 'D5', 'E5'],
+    bass: ['A3', 0, 'E3', 0, 'F3', 0, 'G3', 0]
+  },
+  battle: {
+    tempo: 7,
+    lead: ['A5', 'A5', 'G5', 'A5', 'C6', 'B5', 'A5', 'G5', 'F5', 'F5', 'E5', 'F5', 'A5', 'G5', 'F5', 'E5'],
+    bass: ['A3', 'A3', 'F3', 'F3', 'G3', 'G3', 'E3', 'E3']
+  },
+  boss: {
+    tempo: 6,
+    lead: ['D5', 'F5', 'A5', 'D5', 'C6', 'A5', 'F5', 'A5', 'B5', 'G5', 'E5', 'G5', 'A5', 'F5', 'D5', 'A5'],
+    bass: ['D3', 'D3', 'C3', 'C3', 'B3', 'B3', 'A3', 'A3']
+  },
+  indoor: {
+    tempo: 13,
+    lead: ['G4', 'B4', 'D5', 'B4', 'C5', 'E5', 'D5', 'B4'],
+    bass: ['G3', 0, 'C3', 0]
+  },
+  victory: {
+    tempo: 8,
+    lead: ['C5', 'C5', 'C5', 'E5', 'G5', 0, 'G5', 'C6', 0, 0, 0, 0],
+    bass: ['C3', 0, 'G3', 0]
+  }
+};
+/* ============================================================
+   Procedural artwork
+   ============================================================ */
+function surface(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  return { c, g };
+}
+function px(g, x, y, shade, w, h) { g.fillStyle = PAL[shade]; g.fillRect(x, y, w || 1, h || 1); }
+
+/* ---------------- tiles ---------------- */
+const TILE = {
+  '.': { solid: 0, name: 'grass' },
+  ',': { solid: 0, name: 'tallgrass', encounter: 1 },
+  'T': { solid: 1, name: 'tree' },
+  'W': { solid: 1, name: 'water' },
+  'R': { solid: 1, name: 'rock' },
+  'P': { solid: 0, name: 'path' },
+  'f': { solid: 0, name: 'flower' },
+  'H': { solid: 1, name: 'wall' },
+  'h': { solid: 1, name: 'roof' },
+  'g': { solid: 1, name: 'roof2' },
+  'D': { solid: 0, name: 'door' },
+  'S': { solid: 1, name: 'sign' },
+  '#': { solid: 1, name: 'inwall' },
+  '_': { solid: 0, name: 'floor' },
+  'C': { solid: 1, name: 'counter' },
+  'b': { solid: 0, name: 'bed' },
+  'M': { solid: 0, name: 'mat' },
+  'p': { solid: 1, name: 'shelf' },
+  'L': { solid: 1, name: 'ledge' },
+  'c': { solid: 0, name: 'cavefloor' },
+  'r': { solid: 1, name: 'cavewall' },
+  'x': { solid: 1, name: 'fence' },
+  '=': { solid: 1, name: 'table' }
+};
+
+const tiles = {};           // char -> [frame0, frame1]
+function buildTiles() {
+  const mk = fn => {
+    const out = [];
+    for (let f = 0; f < 2; f++) { const s = surface(TS, TS); fn(s.g, f); out.push(s.c); }
+    return out;
+  };
+  const speckle = (g, shade, seed) => {
+    for (let i = 0; i < 14; i++) {
+      const n = (seed + i * 37) % 97;
+      px(g, (n * 5) % TS, (n * 3) % TS, shade);
+    }
+  };
+
+  const tuft = (g, x, y, shade) => {
+    px(g, x, y + 3, shade, 1, 4); px(g, x + 2, y, shade, 1, 7); px(g, x + 4, y + 2, shade, 1, 5);
+    px(g, x + 1, y + 6, shade, 3, 1);
+  };
+  tiles['.'] = mk(g => {
+    px(g, 0, 0, 1, TS, TS);
+    px(g, 3, 4, 2, 2, 1); px(g, 4, 5, 2, 1, 1);
+    px(g, 11, 10, 2, 2, 1); px(g, 12, 11, 2, 1, 1);
+    px(g, 7, 13, 2, 2, 1);
+  });
+  tiles['P'] = mk(g => { px(g, 0, 0, 0, TS, TS); speckle(g, 1, 11); });
+  tiles['c'] = mk(g => { px(g, 0, 0, 1, TS, TS); speckle(g, 2, 21); px(g, 0, 15, 2, TS, 1); });
+
+  tiles[','] = mk((g, f) => {
+    px(g, 0, 0, 1, TS, TS);
+    const sway = f ? 1 : 0;
+    tuft(g, 1 + sway, 1, 3); tuft(g, 9 - sway, 3, 2);
+    tuft(g, 4 - sway, 8, 3); tuft(g, 10 + sway, 9, 3);
+    px(g, 0, 15, 2, TS, 1);
+  });
+
+  tiles['f'] = mk((g, f) => {
+    px(g, 0, 0, 1, TS, TS); speckle(g, 2, 7);
+    const pts = [[3, 4], [10, 8], [6, 12]];
+    pts.forEach(([x, y], i) => {
+      const o = (f && i % 2) ? 1 : 0;
+      px(g, x, y + o, 0, 3, 1); px(g, x + 1, y - 1 + o, 0, 1, 3); px(g, x + 1, y + o, 3);
+    });
+  });
+
+  tiles['T'] = mk(g => {
+    px(g, 0, 0, 1, TS, TS);
+    px(g, 6, 11, 3, 4, 5);
+    px(g, 2, 1, 3, 12, 11); px(g, 1, 3, 3, 14, 7);
+    px(g, 3, 2, 2, 10, 9); px(g, 2, 4, 2, 12, 5);
+    px(g, 4, 3, 1, 4, 3); px(g, 8, 6, 1, 3, 2);
+    px(g, 5, 8, 3, 2, 1); px(g, 9, 4, 3, 2, 1);
+  });
+
+  tiles['R'] = mk(g => {
+    px(g, 0, 0, 1, TS, TS);
+    px(g, 2, 5, 3, 12, 9); px(g, 3, 3, 3, 10, 12);
+    px(g, 4, 5, 2, 8, 8); px(g, 5, 6, 1, 3, 2);
+  });
+
+  tiles['W'] = mk((g, f) => {
+    px(g, 0, 0, 2, TS, TS);
+    const o = f ? 4 : 0;
+    for (let y = 2; y < TS; y += 5) {
+      px(g, (2 + o) % TS, y, 1, 5, 1);
+      px(g, (9 + o) % TS, y + 2, 1, 4, 1);
+      px(g, (5 + o) % TS, y + 3, 3, 3, 1);
+    }
+  });
+
+  tiles['H'] = mk(g => {
+    px(g, 0, 0, 0, TS, TS);
+    px(g, 0, 0, 2, TS, 1); px(g, 0, 15, 2, TS, 1); px(g, 0, 0, 2, 1, TS);
+    px(g, 3, 3, 3, 10, 9); px(g, 4, 4, 1, 8, 7);
+    px(g, 7, 4, 3, 1, 7); px(g, 4, 7, 3, 8, 1);
+    px(g, 5, 5, 0, 2, 2); px(g, 9, 5, 0, 2, 2);
+  });
+
+  const roof = accent => (g) => {
+    px(g, 0, 0, accent, TS, TS);
+    for (let y = 0; y < TS; y += 4) {
+      px(g, 0, y, 3, TS, 1);
+      const off = (y / 4) % 2 ? 0 : 4;
+      for (let x = off; x < TS; x += 8) px(g, x, y + 1, 3, 1, 3);
+    }
+    px(g, 0, 0, 3, TS, 2);
+  };
+  tiles['h'] = mk(roof(2));
+  tiles['g'] = mk(roof(1));
+
+  tiles['D'] = mk(g => {
+    px(g, 0, 0, 1, TS, TS);
+    px(g, 3, 2, 3, 10, 14); px(g, 4, 3, 2, 8, 13);
+    px(g, 5, 5, 0, 6, 4); px(g, 9, 10, 0, 2, 2);
+  });
+
+  tiles['S'] = mk(g => {
+    px(g, 0, 0, 1, TS, TS); speckle(g, 2, 5);
+    px(g, 7, 10, 3, 2, 5);
+    px(g, 2, 2, 3, 12, 9); px(g, 3, 3, 0, 10, 7);
+    px(g, 4, 5, 3, 8, 1); px(g, 4, 7, 3, 6, 1);
+  });
+
+  tiles['x'] = mk(g => {
+    px(g, 0, 0, 1, TS, TS);
+    px(g, 2, 4, 3, 2, 11); px(g, 10, 4, 3, 2, 11);
+    px(g, 0, 6, 3, TS, 2); px(g, 0, 11, 3, TS, 2);
+  });
+
+  tiles['#'] = mk(g => {
+    px(g, 0, 0, 1, TS, TS);
+    px(g, 0, 0, 2, TS, 2);
+    for (let x = 0; x < TS; x += 8) px(g, x, 2, 2, 1, TS - 2);
+    px(g, 0, 14, 2, TS, 2);
+  });
+  tiles['_'] = mk(g => {
+    px(g, 0, 0, 0, TS, TS);
+    px(g, 0, 0, 1, TS, 1); px(g, 0, 0, 1, 1, TS);
+    px(g, 7, 7, 1, 2, 2);
+  });
+  tiles['C'] = mk(g => {
+    px(g, 0, 0, 0, TS, TS);
+    px(g, 0, 2, 2, TS, 12); px(g, 0, 2, 3, TS, 2); px(g, 0, 12, 3, TS, 2);
+    px(g, 3, 6, 1, 4, 3);
+  });
+  tiles['='] = mk(g => {
+    px(g, 0, 0, 0, TS, TS);
+    px(g, 1, 3, 3, 14, 10); px(g, 2, 4, 1, 12, 8); px(g, 4, 6, 2, 4, 4);
+  });
+  tiles['b'] = mk(g => {
+    px(g, 0, 0, 0, TS, TS);
+    px(g, 2, 0, 3, 12, 16); px(g, 3, 1, 0, 10, 14);
+    px(g, 3, 1, 1, 10, 5); px(g, 3, 6, 3, 10, 1);
+    px(g, 5, 2, 0, 6, 3);
+  });
+  tiles['M'] = mk(g => {
+    px(g, 0, 0, 0, TS, TS);
+    px(g, 1, 3, 2, 14, 10); px(g, 1, 3, 3, 14, 1); px(g, 1, 12, 3, 14, 1);
+    px(g, 4, 6, 0, 8, 4);
+  });
+  tiles['p'] = mk(g => {
+    px(g, 0, 0, 0, TS, TS);
+    px(g, 0, 0, 3, TS, 15); px(g, 1, 1, 1, 14, 5); px(g, 1, 8, 1, 14, 5);
+    for (let i = 0; i < 5; i++) px(g, 2 + i * 3, 1, 2, 2, 5);
+    for (let i = 0; i < 4; i++) px(g, 3 + i * 3, 8, 2, 2, 5);
+  });
+  tiles['r'] = mk(g => {
+    px(g, 0, 0, 2, TS, TS);
+    px(g, 0, 0, 3, TS, 3);
+    for (let i = 0; i < 10; i++) px(g, (i * 7) % TS, 4 + (i * 5) % 11, 3, 2, 1);
+    px(g, 1, 5, 1, 3, 1); px(g, 10, 9, 1, 3, 1);
+  });
+  tiles['L'] = mk(g => {
+    px(g, 0, 0, 1, TS, TS);
+    px(g, 0, 0, 2, TS, 6); px(g, 0, 6, 3, TS, 3);
+    px(g, 0, 9, 2, TS, 7);
+    for (let i = 0; i < TS; i += 5) px(g, i, 10, 3, 3, 1);
+  });
+}
+
+/* ---------------- overworld actors ---------------- */
+/* Each actor is 16x16 in four facings with a two-step walk cycle. */
+function makeActor(look) {
+  const hat = look.hat === undefined ? 3 : look.hat;
+  const hair = look.hair === undefined ? 3 : look.hair;
+  const body = look.body === undefined ? 2 : look.body;
+  const trim = look.trim === undefined ? 0 : look.trim;
+  const skin = 0;
+  const frames = {};
+
+  const draw = (dir, step) => {
+    const s = surface(TS, TS), g = s.g;
+    const lift = step === 1 ? 1 : 0;
+    // legs
+    px(g, 5 + (dir === 'left' ? -1 : 0), 12 - lift, 3, 2, 4 - lift);
+    px(g, 9 + (dir === 'right' ? 1 : 0), 12 - (step === 2 ? 1 : 0), 3, 2, 4 - (step === 2 ? 1 : 0));
+    // torso
+    px(g, 4, 8, 3, 8, 5);
+    px(g, 5, 8, body, 6, 4);
+    px(g, 5, 11, trim, 6, 1);
+    // arms
+    if (dir === 'left') px(g, 3, 9, 3, 2, 3);
+    else if (dir === 'right') px(g, 11, 9, 3, 2, 3);
+    else { px(g, 3, 9, 3, 1, 3); px(g, 12, 9, 3, 1, 3); }
+    // head
+    px(g, 4, 2, 3, 8, 7); px(g, 4, 2, 3, 8, 1);
+    px(g, 3, 3, 3, 10, 5);
+    px(g, 4, 3, skin, 8, 5);
+    // hat / hair
+    px(g, 3, 1, hat, 10, 3); px(g, 3, 1, 3, 10, 1);
+    px(g, 4, 4, hair, 8, 1);
+    if (look.cap) { // brim points where the actor faces
+      if (dir === 'down') px(g, 4, 4, hat, 8, 1);
+      if (dir === 'up') px(g, 3, 0, hat, 10, 1);
+      if (dir === 'left') px(g, 1, 3, hat, 4, 1);
+      if (dir === 'right') px(g, 11, 3, hat, 4, 1);
+    }
+    if (look.long) { px(g, 2, 4, hair, 2, 6); px(g, 12, 4, hair, 2, 6); }
+    // face
+    if (dir === 'down') { px(g, 5, 6, 3, 2, 2); px(g, 9, 6, 3, 2, 2); }
+    else if (dir === 'left') { px(g, 5, 6, 3, 2, 2); px(g, 3, 5, hair, 2, 4); }
+    else if (dir === 'right') { px(g, 9, 6, 3, 2, 2); px(g, 11, 5, hair, 2, 4); }
+    else { px(g, 4, 5, hair, 8, 3); }
+    return s.c;
+  };
+
+  ['down', 'up', 'left', 'right'].forEach(d => { frames[d] = [draw(d, 0), draw(d, 1), draw(d, 0), draw(d, 2)]; });
+  return frames;
+}
+
+/* ---------------- creature sprites ----------------
+   Species describe a silhouette (body, head, ears, tail, wings...)
+   and this rasterises it into a shaded 40x40 sprite. */
+const CS = 48, CS_OY = 6;
+function creatureSprite(look) {
+  const grid = new Uint8Array(CS * CS);
+  const get = (x, y) => (x < 0 || y < 0 || x >= CS || y >= CS) ? 0 : grid[y * CS + x];
+  const set = (x, y, v) => { if (x >= 0 && y >= 0 && x < CS && y < CS) grid[y * CS + x] = v; };
+  const ell = (cx, cy, rx, ry, v) => {
+    for (let y = Math.floor(cy - ry); y <= cy + ry; y++)
+      for (let x = Math.floor(cx - rx); x <= cx + rx; x++) {
+        const dx = (x - cx) / rx, dy = (y - cy) / ry;
+        if (dx * dx + dy * dy <= 1) set(x, y, v);
+      }
+  };
+  const tri = (x0, y0, x1, y1, x2, y2, v) => {
+    const minx = Math.min(x0, x1, x2), maxx = Math.max(x0, x1, x2);
+    const miny = Math.min(y0, y1, y2), maxy = Math.max(y0, y1, y2);
+    const area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+    if (!area) return;
+    for (let y = miny; y <= maxy; y++) for (let x = minx; x <= maxx; x++) {
+      const w0 = ((x1 - x0) * (y - y0) - (x - x0) * (y1 - y0)) / area;
+      const w1 = ((x - x0) * (y2 - y0) - (x2 - x0) * (y - y0)) / area;
+      if (w0 >= 0 && w1 >= 0 && w0 + w1 <= 1) set(x, y, v);
+    }
+  };
+  const line = (x0, y0, x1, y1, v, thick) => {
+    const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    for (let i = 0; i <= steps; i++) {
+      const x = Math.round(x0 + (x1 - x0) * i / steps), y = Math.round(y0 + (y1 - y0) * i / steps);
+      const t = thick || 1;
+      for (let a = 0; a < t; a++) for (let b = 0; b < t; b++) set(x + a, y + b, v);
+    }
+  };
+
+  const bw = look.bw, bh = look.bh;
+  const bcx = CS / 2, bcy = look.bcy + CS_OY;
+  const hr = look.hr, hcx = CS / 2 + (look.hdx || 0), hcy = look.hcy + CS_OY;
+
+  // wings sit behind everything else
+  if (look.wings) {
+    tri(bcx - 2, bcy - 4, bcx - bw - 9, bcy - 12, bcx - bw - 3, bcy + 4, 1);
+    tri(bcx + 2, bcy - 4, bcx + bw + 9, bcy - 12, bcx + bw + 3, bcy + 4, 1);
+  }
+  // tail
+  if (look.tail === 'bushy') ell(bcx + bw + 2, bcy - 3, 6, 7, 1);
+  else if (look.tail === 'thin') { line(bcx + bw - 1, bcy, bcx + bw + 9, bcy - 9, 1, 3); ell(bcx + bw + 9, bcy - 10, 3, 3, 1); }
+  else if (look.tail === 'fin') tri(bcx + bw - 2, bcy, bcx + bw + 10, bcy - 8, bcx + bw + 10, bcy + 6, 1);
+  else if (look.tail === 'bolt') { line(bcx + bw - 1, bcy, bcx + bw + 6, bcy - 6, 1, 3); line(bcx + bw + 6, bcy - 6, bcx + bw + 2, bcy - 10, 1, 3); }
+  else if (look.tail === 'leaf') { line(bcx + bw - 2, bcy, bcx + bw + 5, bcy - 7, 1, 2); ell(bcx + bw + 7, bcy - 10, 4, 5, 1); }
+
+  // legs / feet
+  if (look.legs === 4) {
+    ell(bcx - bw + 3, bcy + bh - 1, 3, 5, 1);
+    ell(bcx + bw - 3, bcy + bh - 1, 3, 5, 1);
+    ell(bcx - bw + 6, bcy + bh, 3, 4, 1);
+  } else if (look.legs === 2) {
+    ell(bcx - 6, bcy + bh - 1, 4, 4, 1);
+    ell(bcx + 6, bcy + bh - 1, 4, 4, 1);
+  }
+
+  ell(bcx, bcy, bw, bh, 1);          // body
+  if (look.arms) { ell(bcx - bw - 1, bcy - 1, 4, 3, 1); ell(bcx + bw + 1, bcy - 1, 4, 3, 1); }
+  ell(hcx, hcy, hr, hr * (look.hsq || 1), 1); // head
+
+  // ears / horns / crests
+  const e = look.ears;
+  if (e === 'pointy') {
+    tri(hcx - hr, hcy - hr + 3, hcx - hr - 3, hcy - hr - 7, hcx - 1, hcy - hr + 1, 1);
+    tri(hcx + hr, hcy - hr + 3, hcx + hr + 3, hcy - hr - 7, hcx + 1, hcy - hr + 1, 1);
+  } else if (e === 'round') {
+    ell(hcx - hr, hcy - hr + 2, 4, 4, 1);
+    ell(hcx + hr, hcy - hr + 2, 4, 4, 1);
+  } else if (e === 'antenna') {
+    line(hcx - 4, hcy - hr + 1, hcx - 8, hcy - hr - 7, 1, 2);
+    line(hcx + 4, hcy - hr + 1, hcx + 8, hcy - hr - 7, 1, 2);
+    ell(hcx - 8, hcy - hr - 8, 2, 2, 1); ell(hcx + 8, hcy - hr - 8, 2, 2, 1);
+  } else if (e === 'horn') {
+    tri(hcx - 3, hcy - hr + 1, hcx, hcy - hr - 9, hcx + 3, hcy - hr + 1, 1);
+  } else if (e === 'fin') {
+    tri(hcx - 2, hcy - hr, hcx - 1, hcy - hr - 9, hcx + 5, hcy - hr + 1, 1);
+  } else if (e === 'leaf') {
+    ell(hcx - 6, hcy - hr - 2, 6, 3, 1);
+    ell(hcx + 6, hcy - hr - 2, 6, 3, 1);
+    tri(hcx - 2, hcy - hr + 2, hcx, hcy - hr - 8, hcx + 2, hcy - hr + 2, 1);
+  } else if (e === 'flame') {
+    tri(hcx - 5, hcy - hr + 2, hcx - 1, hcy - hr - 9, hcx + 4, hcy - hr, 1);
+    tri(hcx + 1, hcy - hr + 2, hcx + 6, hcy - hr - 6, hcx + 8, hcy - hr + 2, 1);
+  }
+  if (look.spikes) for (let i = -1; i <= 1; i++) tri(bcx + i * 7 - 3, bcy - bh + 2, bcx + i * 7, bcy - bh - 5, bcx + i * 7 + 3, bcy - bh + 2, 1);
+
+  // fill solid mid-tone, keep a highlight in the upper left
+  for (let y = 0; y < CS; y++) for (let x = 0; x < CS; x++)
+    if (get(x, y) === 1) set(x, y, (x * 0.45 + y) < CS * 0.72 ? 1 : 2);
+
+  // markings
+  if (look.pattern === 'stripes')
+    for (let i = 0; i < 3; i++) line(bcx - bw + 4 + i * 5, bcy - bh + 4, bcx - bw + 6 + i * 5, bcy + bh - 5, 3, 1);
+  if (look.pattern === 'spots')
+    [[-6, 2], [4, -2], [1, 6], [8, 3]].forEach(([dx, dy]) => { if (get(bcx + dx, bcy + dy)) ell(bcx + dx, bcy + dy, 2, 2, 3); });
+  if (look.pattern === 'belly') ell(bcx, bcy + 3, bw - 4, bh - 4, 1);
+  if (look.pattern === 'shell') ell(bcx, bcy - 1, bw - 3, bh - 3, 1);
+
+  // outline
+  const outline = [];
+  for (let y = 0; y < CS; y++) for (let x = 0; x < CS; x++) {
+    if (!get(x, y)) continue;
+    if (!get(x - 1, y) || !get(x + 1, y) || !get(x, y - 1) || !get(x, y + 1)) outline.push(y * CS + x);
+  }
+  outline.forEach(i => { grid[i] = 3; });
+
+  // face
+  const ey = hcy - 1, ex = Math.round(hr * 0.5) + 1;
+  [-1, 1].forEach(s => {
+    const cx = hcx + s * ex;
+    ell(cx, ey, 2, 3, 3);
+    set(cx - 1, ey - 1, 1);
+  });
+  if (look.mouth !== 'none') {
+    const my = hcy + Math.round(hr * 0.55);
+    line(hcx - 3, my, hcx + 3, my, 3, 1);
+    if (look.mouth === 'fang') { set(hcx - 3, my + 1, 3); set(hcx + 3, my + 1, 3); }
+    if (look.mouth === 'beak') { tri(hcx - 4, my - 2, hcx + 4, my - 2, hcx, my + 4, 3); }
+  }
+
+  // rasterise
+  const s = surface(CS, CS), g = s.g;
+  for (let y = 0; y < CS; y++) for (let x = 0; x < CS; x++) {
+    const v = grid[y * CS + x];
+    if (v) px(g, x, y, v);
+  }
+  return s.c;
+}
+
+/* mirrored copy, used for the sprite on the player's side of the field */
+function mirrorSprite(src) {
+  const s = surface(src.width, src.height);
+  s.g.translate(src.width, 0); s.g.scale(-1, 1);
+  s.g.drawImage(src, 0, 0);
+  return s.c;
+}
+
+/* a small ball sprite for the catch animation */
+let ballSprite = null;
+function buildBall() {
+  const s = surface(12, 12), g = s.g;
+  px(g, 3, 0, 3, 6, 1); px(g, 1, 1, 3, 10, 1);
+  px(g, 0, 2, 3, 1, 8); px(g, 11, 2, 3, 1, 8);
+  px(g, 1, 10, 3, 10, 1); px(g, 3, 11, 3, 6, 1);
+  px(g, 1, 2, 2, 10, 3); px(g, 2, 1, 2, 8, 1);
+  px(g, 1, 7, 0, 10, 3); px(g, 2, 10, 0, 8, 1);
+  px(g, 0, 5, 3, 12, 2);
+  px(g, 5, 5, 3, 3, 3); px(g, 6, 6, 0, 1, 1);
+  ballSprite = s.c;
+}
+/* ============================================================
+   Game data
+   ============================================================ */
+const TYPES = ['NORMAL', 'FIRE', 'WATER', 'GRASS', 'ELECTRIC', 'ROCK', 'BUG'];
+const CHART = {
+  NORMAL: { ROCK: 0.5 },
+  FIRE: { GRASS: 2, BUG: 2, WATER: 0.5, ROCK: 0.5, FIRE: 0.5 },
+  WATER: { FIRE: 2, ROCK: 2, GRASS: 0.5, WATER: 0.5 },
+  GRASS: { WATER: 2, ROCK: 2, FIRE: 0.5, GRASS: 0.5, BUG: 0.5 },
+  ELECTRIC: { WATER: 2, GRASS: 0.5, ROCK: 0.5, ELECTRIC: 0.5 },
+  ROCK: { FIRE: 2, BUG: 2, WATER: 0.5, GRASS: 0.5 },
+  BUG: { GRASS: 2, FIRE: 0.5, ROCK: 0.5 }
+};
+function typeMult(atkType, defType) {
+  const row = CHART[atkType];
+  return (row && row[defType] !== undefined) ? row[defType] : 1;
+}
+
+/* effect: brn / par / slp / atk+ / def+ / atk- / def- / heal / drain */
+const MOVES = {
+  TACKLE: { type: 'NORMAL', pow: 40, pp: 35, acc: 100 },
+  SCRATCH: { type: 'NORMAL', pow: 40, pp: 35, acc: 100 },
+  QUICKJAB: { type: 'NORMAL', pow: 40, pp: 30, acc: 100, priority: 1 },
+  BITE: { type: 'NORMAL', pow: 55, pp: 25, acc: 100 },
+  SLAM: { type: 'NORMAL', pow: 75, pp: 15, acc: 85 },
+  GROWL: { type: 'NORMAL', pow: 0, pp: 30, acc: 100, effect: 'atk-' },
+  TAILWHIP: { type: 'NORMAL', pow: 0, pp: 30, acc: 100, effect: 'def-' },
+  HOWL: { type: 'NORMAL', pow: 0, pp: 20, acc: 100, effect: 'atk+' },
+  HARDEN: { type: 'NORMAL', pow: 0, pp: 20, acc: 100, effect: 'def+' },
+  LULLABY: { type: 'NORMAL', pow: 0, pp: 10, acc: 65, effect: 'slp' },
+  REST: { type: 'NORMAL', pow: 0, pp: 10, acc: 100, effect: 'heal' },
+  EMBER: { type: 'FIRE', pow: 40, pp: 25, acc: 100, effect: 'brn', chance: 10 },
+  FLAMEFANG: { type: 'FIRE', pow: 65, pp: 15, acc: 95, effect: 'brn', chance: 20 },
+  INFERNO: { type: 'FIRE', pow: 95, pp: 5, acc: 85, effect: 'brn', chance: 15 },
+  BUBBLE: { type: 'WATER', pow: 40, pp: 30, acc: 100 },
+  AQUAJET: { type: 'WATER', pow: 60, pp: 20, acc: 100, priority: 1 },
+  TIDALWAVE: { type: 'WATER', pow: 95, pp: 5, acc: 85 },
+  VINESNAP: { type: 'GRASS', pow: 40, pp: 25, acc: 100 },
+  LEAFBLADE: { type: 'GRASS', pow: 65, pp: 15, acc: 95 },
+  SOLARBEAM: { type: 'GRASS', pow: 95, pp: 5, acc: 85 },
+  DRAINSEED: { type: 'GRASS', pow: 35, pp: 15, acc: 100, effect: 'drain' },
+  SPARK: { type: 'ELECTRIC', pow: 45, pp: 25, acc: 100, effect: 'par', chance: 25 },
+  THUNDER: { type: 'ELECTRIC', pow: 85, pp: 10, acc: 80, effect: 'par', chance: 25 },
+  ROCKTOSS: { type: 'ROCK', pow: 50, pp: 20, acc: 95 },
+  BOULDER: { type: 'ROCK', pow: 80, pp: 10, acc: 85 },
+  BUGBITE: { type: 'BUG', pow: 45, pp: 25, acc: 100 },
+  PINSHOT: { type: 'BUG', pow: 70, pp: 15, acc: 90 }
+};
+const MOVE_LABEL = {
+  QUICKJAB: 'QUICK JAB', TAILWHIP: 'TAIL WHIP', FLAMEFANG: 'FLAME FANG',
+  AQUAJET: 'AQUA JET', TIDALWAVE: 'TIDAL WAVE', VINESNAP: 'VINE SNAP',
+  LEAFBLADE: 'LEAF BLADE', SOLARBEAM: 'SOLAR BEAM', DRAINSEED: 'DRAIN SEED',
+  ROCKTOSS: 'ROCK TOSS', BUGBITE: 'BUG BITE', PINSHOT: 'PIN SHOT'
+};
+const moveName = m => MOVE_LABEL[m] || m;
+
+const DEX = {
+  FLAREPUP: {
+    no: 1, type: 'FIRE', base: { hp: 45, atk: 56, def: 42, spd: 58 }, catch: 45, xp: 65,
+    learn: [[1, 'SCRATCH'], [1, 'GROWL'], [7, 'EMBER'], [13, 'BITE'], [19, 'HOWL'], [25, 'FLAMEFANG'], [33, 'INFERNO']],
+    evo: { lv: 16, to: 'BLAZEHOUND' },
+    look: { bw: 11, bh: 8, bcy: 27, hr: 9, hcy: 15, ears: 'pointy', tail: 'bushy', legs: 4, pattern: 'spots', mouth: 'fang' }
+  },
+  BLAZEHOUND: {
+    no: 2, type: 'FIRE', base: { hp: 66, atk: 84, def: 62, spd: 82 }, catch: 20, xp: 155,
+    learn: [[1, 'SCRATCH'], [1, 'EMBER'], [13, 'BITE'], [19, 'HOWL'], [27, 'FLAMEFANG'], [36, 'INFERNO']],
+    look: { bw: 13, bh: 9, bcy: 26, hr: 10, hcy: 14, ears: 'flame', tail: 'bushy', legs: 4, spikes: 1, pattern: 'stripes', mouth: 'fang' }
+  },
+  AQUAFIN: {
+    no: 3, type: 'WATER', base: { hp: 50, atk: 50, def: 55, spd: 45 }, catch: 45, xp: 65,
+    learn: [[1, 'TACKLE'], [1, 'TAILWHIP'], [7, 'BUBBLE'], [13, 'HARDEN'], [19, 'AQUAJET'], [26, 'BITE'], [34, 'TIDALWAVE']],
+    evo: { lv: 16, to: 'TIDALFIN' },
+    look: { bw: 11, bh: 9, bcy: 26, hr: 9, hcy: 14, ears: 'fin', tail: 'fin', legs: 2, pattern: 'belly', mouth: 'none' }
+  },
+  TIDALFIN: {
+    no: 4, type: 'WATER', base: { hp: 72, atk: 74, def: 82, spd: 66 }, catch: 20, xp: 155,
+    learn: [[1, 'TACKLE'], [1, 'BUBBLE'], [13, 'HARDEN'], [19, 'AQUAJET'], [28, 'SLAM'], [37, 'TIDALWAVE']],
+    look: { bw: 13, bh: 10, bcy: 25, hr: 10, hcy: 13, ears: 'fin', tail: 'fin', legs: 2, arms: 1, spikes: 1, pattern: 'belly', mouth: 'none' }
+  },
+  LEAFLING: {
+    no: 5, type: 'GRASS', base: { hp: 48, atk: 49, def: 52, spd: 50 }, catch: 45, xp: 65,
+    learn: [[1, 'TACKLE'], [1, 'GROWL'], [7, 'VINESNAP'], [12, 'DRAINSEED'], [19, 'HARDEN'], [25, 'LEAFBLADE'], [34, 'SOLARBEAM']],
+    evo: { lv: 16, to: 'BLOOMVINE' },
+    look: { bw: 10, bh: 9, bcy: 27, hr: 9, hcy: 15, ears: 'leaf', tail: 'leaf', legs: 2, pattern: 'spots', mouth: 'none' }
+  },
+  BLOOMVINE: {
+    no: 6, type: 'GRASS', base: { hp: 70, atk: 72, def: 78, spd: 70 }, catch: 20, xp: 155,
+    learn: [[1, 'TACKLE'], [1, 'VINESNAP'], [12, 'DRAINSEED'], [19, 'HARDEN'], [27, 'LEAFBLADE'], [36, 'SOLARBEAM']],
+    look: { bw: 13, bh: 10, bcy: 25, hr: 10, hcy: 13, ears: 'leaf', tail: 'leaf', legs: 2, arms: 1, pattern: 'stripes', mouth: 'none' }
+  },
+  NIBBIT: {
+    no: 7, type: 'NORMAL', base: { hp: 40, atk: 46, def: 36, spd: 62 }, catch: 200, xp: 42,
+    learn: [[1, 'TACKLE'], [1, 'TAILWHIP'], [6, 'QUICKJAB'], [12, 'BITE'], [20, 'SLAM'], [28, 'HOWL']],
+    look: { bw: 9, bh: 7, bcy: 28, hr: 8, hcy: 17, ears: 'round', tail: 'thin', legs: 2, pattern: 'belly', mouth: 'fang' }
+  },
+  CHIRPWING: {
+    no: 8, type: 'NORMAL', base: { hp: 42, atk: 48, def: 38, spd: 70 }, catch: 180, xp: 48,
+    learn: [[1, 'SCRATCH'], [1, 'GROWL'], [6, 'QUICKJAB'], [14, 'BITE'], [22, 'LULLABY'], [30, 'SLAM']],
+    look: { bw: 9, bh: 8, bcy: 26, hr: 8, hcy: 15, ears: 'none', tail: 'fin', legs: 2, wings: 1, mouth: 'beak' }
+  },
+  ZAPMOTH: {
+    no: 9, type: 'ELECTRIC', base: { hp: 44, atk: 54, def: 40, spd: 76 }, catch: 120, xp: 72,
+    learn: [[1, 'TACKLE'], [1, 'SPARK'], [12, 'BUGBITE'], [20, 'HOWL'], [28, 'THUNDER']],
+    look: { bw: 8, bh: 7, bcy: 25, hr: 8, hcy: 14, ears: 'antenna', tail: 'bolt', legs: 0, wings: 1, pattern: 'stripes', mouth: 'none' }
+  },
+  PEBBLIT: {
+    no: 10, type: 'ROCK', base: { hp: 52, atk: 60, def: 82, spd: 26 }, catch: 140, xp: 68,
+    learn: [[1, 'TACKLE'], [1, 'HARDEN'], [8, 'ROCKTOSS'], [16, 'SLAM'], [26, 'BOULDER']],
+    look: { bw: 12, bh: 10, bcy: 26, hr: 8, hcy: 15, hsq: 0.9, ears: 'horn', tail: 'none', legs: 2, spikes: 1, pattern: 'shell', mouth: 'none' }
+  },
+  GRUBBZ: {
+    no: 11, type: 'BUG', base: { hp: 46, atk: 52, def: 50, spd: 44 }, catch: 190, xp: 45,
+    learn: [[1, 'TACKLE'], [1, 'BUGBITE'], [10, 'HARDEN'], [18, 'PINSHOT'], [26, 'SLAM']],
+    look: { bw: 11, bh: 8, bcy: 27, hr: 8, hcy: 16, ears: 'antenna', tail: 'none', legs: 4, pattern: 'stripes', mouth: 'fang' }
+  },
+  SHADEPAW: {
+    no: 12, type: 'NORMAL', base: { hp: 58, atk: 74, def: 56, spd: 78 }, catch: 60, xp: 128,
+    learn: [[1, 'SCRATCH'], [1, 'HOWL'], [14, 'BITE'], [22, 'QUICKJAB'], [30, 'SLAM'], [38, 'LULLABY']],
+    look: { bw: 12, bh: 8, bcy: 27, hr: 9, hcy: 15, ears: 'pointy', tail: 'thin', legs: 4, pattern: 'stripes', mouth: 'fang' }
+  }
+};
+
+/* ---------------- items ---------------- */
+const ITEMS = {
+  BALL: { label: 'BALL', price: 200, kind: 'ball', rate: 1, desc: 'Catches wild monsters.' },
+  GREATBALL: { label: 'GREAT BALL', price: 600, kind: 'ball', rate: 1.8, desc: 'A better ball.' },
+  POTION: { label: 'POTION', price: 300, kind: 'heal', amount: 20, desc: 'Restores 20 HP.' },
+  SUPERPOTION: { label: 'SUPER POTION', price: 700, kind: 'heal', amount: 50, desc: 'Restores 50 HP.' },
+  REVIVE: { label: 'REVIVE', price: 1500, kind: 'revive', desc: 'Wakes a fainted monster.' },
+  ELIXIR: { label: 'ELIXIR', price: 900, kind: 'pp', desc: 'Restores 10 PP to all moves.' }
+};
+const SHOP_STOCK = ['BALL', 'GREATBALL', 'POTION', 'SUPERPOTION', 'REVIVE', 'ELIXIR'];
+
+/* ---------------- maps ---------------- */
+const MAPS = {
+  home: {
+    music: 'indoor', indoor: 1,
+    rows: [
+      '##########',
+      '#__pp__p_#',
+      '#b_______#',
+      '#b____==_#',
+      '#________#',
+      '#________#',
+      '#___M____#',
+      '##########'
+    ],
+    warps: [{ x: 4, y: 6, to: 'town', tx: 4, ty: 4, dir: 'down' }],
+    objects: [
+      { x: 1, y: 2, text: ['Your bed. It looks very slept in.'], heal: 1 },
+      { x: 3, y: 1, text: ['A shelf of monster field guides.'] },
+      { x: 4, y: 1, text: ['A shelf of monster field guides.'] },
+      { x: 7, y: 1, text: ['A dusty game console. Not today.'] },
+      { x: 6, y: 3, text: ['Mom left a note: BE BACK BY DINNER.'] },
+      { x: 7, y: 3, text: ['Mom left a note: BE BACK BY DINNER.'] }
+    ],
+    npcs: []
+  },
+
+  town: {
+    music: 'town', name: 'VERDANT TOWN',
+    rows: [
+      'TTTTTTTTTPPTTTTTTTTT',
+      'T........PP........T',
+      'T.hhhh...PP...gggg.T',
+      'T.HHDH...PP...HHDH.T',
+      'T....S...PP....S...T',
+      'T........PP........T',
+      'TPPPPPPPPPPPPPPPPPPT',
+      'T.f......PP......f.T',
+      'T.hhhhh..PP........T',
+      'T.HHDHH..PP...WWWW.T',
+      'T........PP...WWWW.T',
+      'T...S....PP...WWWW.T',
+      'T........PP........T',
+      'TPPPPPPPPPPPPPPPPPPT',
+      'T..,,,...PP...,,,..T',
+      'T..,,,...PP...,,,..T',
+      'T........PP........T',
+      'TTTTTTTTTTTTTTTTTTTT'
+    ],
+    warps: [
+      { x: 4, y: 3, to: 'home', tx: 4, ty: 5, dir: 'up' },
+      { x: 16, y: 3, to: 'lab', tx: 5, ty: 6, dir: 'up' },
+      { x: 4, y: 9, to: 'center', tx: 5, ty: 6, dir: 'up' },
+      { x: 9, y: 0, to: 'route1', tx: 9, ty: 22, dir: 'up' },
+      { x: 10, y: 0, to: 'route1', tx: 10, ty: 22, dir: 'up' }
+    ],
+    objects: [
+      { x: 5, y: 4, text: ['YOUR HOUSE. Smells like toast.'] },
+      { x: 15, y: 4, text: ['PROF. HOLLY\'S LAB.', 'She studies wild monsters.'] },
+      { x: 4, y: 11, text: ['VERDANT TOWN', 'Where every journey starts small.'] }
+    ],
+    npcs: [
+      { x: 7, y: 7, dir: 'down', look: { hat: 2, body: 3, trim: 0 }, wander: 1, text: ['Up north the grass gets tall.', 'Wild monsters hide in it!'] },
+      { x: 13, y: 12, dir: 'left', look: { hat: 3, hair: 3, body: 1, long: 1 }, text: ['The CENTER heals your team for free.', 'The clerk inside sells BALLS too.'] },
+      { x: 13, y: 10, dir: 'right', look: { hat: 1, body: 2, cap: 1 }, text: ['I fish here every day.', 'I have caught one boot so far.'] }
+    ],
+    encounters: { rate: 6, table: [['NIBBIT', 2, 4], ['CHIRPWING', 2, 4]] }
+  },
+
+  lab: {
+    music: 'indoor', indoor: 1, name: 'MONSTER LAB',
+    rows: [
+      '############',
+      '#__pppppp__#',
+      '#__________#',
+      '#_==____==_#',
+      '#__________#',
+      '#_p______p_#',
+      '#____MM____#',
+      '############'
+    ],
+    warps: [
+      { x: 4, y: 6, to: 'town', tx: 16, ty: 4, dir: 'down' },
+      { x: 5, y: 6, to: 'town', tx: 16, ty: 4, dir: 'down' }
+    ],
+    objects: [
+      { x: 2, y: 3, text: ['Beakers of something green.'] },
+      { x: 3, y: 3, text: ['Notes on monster typing.'] },
+      { x: 8, y: 3, text: ['A machine humming quietly.'] },
+      { x: 9, y: 3, text: ['A half-eaten sandwich. Science.'] }
+    ],
+    npcs: [{ x: 5, y: 2, dir: 'down', look: { hat: 0, hair: 0, body: 0, trim: 2, long: 1 }, prof: 1, text: [] }]
+  },
+
+  center: {
+    music: 'indoor', indoor: 1, name: 'MONSTER CENTER',
+    rows: [
+      '############',
+      '#__________#',
+      '#__CCC__CC_#',
+      '#__________#',
+      '#___pp_____#',
+      '#_==____==_#',
+      '#____MM____#',
+      '############'
+    ],
+    warps: [
+      { x: 4, y: 6, to: 'town', tx: 4, ty: 10, dir: 'down' },
+      { x: 5, y: 6, to: 'town', tx: 4, ty: 10, dir: 'down' }
+    ],
+    objects: [
+      { x: 4, y: 4, text: ['The storage PC. Everything is full', 'of pictures of your monsters.'] },
+      { x: 5, y: 4, text: ['The storage PC. Everything is full', 'of pictures of your monsters.'] }
+    ],
+    npcs: [
+      { x: 3, y: 1, dir: 'down', look: { hat: 0, hair: 2, body: 0, trim: 2, long: 1 }, nurse: 1, text: [] },
+      { x: 8, y: 1, dir: 'down', look: { hat: 2, hair: 3, body: 1 }, shop: 1, text: [] },
+      { x: 10, y: 4, dir: 'left', look: { hat: 3, body: 2, cap: 1 }, text: ['A monster at low HP is easier', 'to catch. Weaken it first!'] }
+    ]
+  },
+
+  route1: {
+    music: 'route', name: 'ROUTE 1',
+    rows: [
+      'TTTTTTTTTPPTTTTTTTTT',
+      'T........PP........T',
+      'T.,,,,...PP...,,,,.T',
+      'T.,,,,...PP...,,,,.T',
+      'T.,,,,...PP........T',
+      'T........PP........T',
+      'T...RR...PP...RR...T',
+      'T........PP........T',
+      'T..,,,,,.PP.,,,,,..T',
+      'T..,,,,,.PP.,,,,,..T',
+      'T..,,,,,.PP.,,,,,..T',
+      'T........PP........T',
+      'TxxxxxxxxPPxxxxxxxxT',
+      'T........PP........T',
+      'T....S...PP........T',
+      'T........PP...WWW..T',
+      'T.,,,,...PP...WWW..T',
+      'T.,,,,...PP...WWW..T',
+      'T.,,,,...PP........T',
+      'T........PP........T',
+      'T...RR...PP...RR...T',
+      'T........PP........T',
+      'T........PP........T',
+      'TTTTTTTTTPPTTTTTTTTT'
+    ],
+    warps: [
+      { x: 9, y: 23, to: 'town', tx: 9, ty: 1, dir: 'down' },
+      { x: 10, y: 23, to: 'town', tx: 10, ty: 1, dir: 'down' },
+      { x: 9, y: 0, to: 'forest', tx: 7, ty: 18, dir: 'up' },
+      { x: 10, y: 0, to: 'forest', tx: 7, ty: 18, dir: 'up' }
+    ],
+    objects: [
+      { x: 5, y: 14, text: ['ROUTE 1', 'VERDANT TOWN <-> WHISPER WOODS'] },
+      { x: 3, y: 5, item: 'POTION' },
+      { x: 15, y: 19, item: 'BALL', count: 3 }
+    ],
+    npcs: [
+      {
+        x: 6, y: 11, dir: 'right', look: { hat: 2, body: 3, cap: 1 }, id: 'youngster',
+        trainer: { name: 'YOUNGSTER RIO', money: 240, team: [['NIBBIT', 5], ['GRUBBZ', 5]] },
+        text: ['My monsters and I train out here!'], after: ['Tall grass hides tougher ones up north.']
+      },
+      {
+        x: 13, y: 17, dir: 'left', look: { hat: 1, hair: 3, body: 2, long: 1 }, id: 'camper',
+        trainer: { name: 'CAMPER JUNE', money: 320, team: [['CHIRPWING', 6], ['PEBBLIT', 7]] },
+        text: ['You look new. Show me your team!'], after: ['ROCK types shrug off NORMAL hits.']
+      },
+      { x: 12, y: 4, dir: 'down', look: { hat: 3, body: 1 }, text: ['Running low on HP?', 'The CENTER back in town is free.'] }
+    ],
+    encounters: { rate: 11, table: [['NIBBIT', 3, 6], ['CHIRPWING', 3, 6], ['GRUBBZ', 3, 5], ['PEBBLIT', 4, 6]] }
+  },
+
+  forest: {
+    music: 'route', name: 'WHISPER WOODS',
+    rows: [
+      'TTTTTTTPPTTTTTTTTTTT',
+      'T......PP..........T',
+      'T.TTT..PP..TTTTTT..T',
+      'T.TTT..PP..TTTTTT..T',
+      'T......PP..........T',
+      'T.,,,..PP...,,,,,..T',
+      'T.,,,..PPPPP,,,,,..T',
+      'T.,,,......P,,,,,..T',
+      'T..........P.......T',
+      'T..TTT..TT.P..TTT..T',
+      'T..TTT..TT.P..TTT..T',
+      'T..........P.......T',
+      'T.,,,,,....P...,,..T',
+      'T.,,,,,PPPPP...,,..T',
+      'T......P.......,,..T',
+      'T..TT..P..TTTT.....T',
+      'T..TT..P..TTTT.....T',
+      'T......P...........T',
+      'T......P...........T',
+      'TTTTTTTPTTTTTTTTTTTT'
+    ],
+    warps: [
+      { x: 7, y: 19, to: 'route1', tx: 9, ty: 1, dir: 'down' },
+      { x: 7, y: 0, to: 'summit', tx: 7, ty: 12, dir: 'up' },
+      { x: 8, y: 0, to: 'summit', tx: 7, ty: 12, dir: 'up' }
+    ],
+    objects: [
+      { x: 17, y: 8, item: 'SUPERPOTION' },
+      { x: 2, y: 14, item: 'GREATBALL', count: 2 }
+    ],
+    npcs: [
+      {
+        x: 11, y: 4, dir: 'down', look: { hat: 3, body: 2, cap: 1 }, id: 'bugkid',
+        trainer: { name: 'BUG CATCHER MO', money: 380, team: [['GRUBBZ', 8], ['ZAPMOTH', 9]] },
+        text: ['Bugs are the best. Fight me on it!'], after: ['FIRE burns right through my team...']
+      },
+      {
+        x: 4, y: 17, dir: 'right', look: { hat: 0, hair: 3, body: 3, long: 1 }, id: 'hiker',
+        trainer: { name: 'HIKER DALE', money: 520, team: [['PEBBLIT', 10], ['GRUBBZ', 10], ['NIBBIT', 11]] },
+        text: ['The summit ahead is no joke.', 'Prove you are ready.'], after: ['Heal up before you climb!']
+      },
+      { x: 15, y: 12, dir: 'left', look: { hat: 2, body: 0 }, text: ['Something strong lives at the', 'summit. It has never been beaten.'] }
+    ],
+    encounters: { rate: 12, table: [['GRUBBZ', 6, 9], ['ZAPMOTH', 7, 10], ['LEAFLING', 6, 9], ['CHIRPWING', 7, 10]] }
+  },
+
+  summit: {
+    music: 'route', name: 'STONE SUMMIT',
+    rows: [
+      'rrrrrrrrrrrrrrrr',
+      'rccccccccccccccr',
+      'rccrrccccccrrccr',
+      'rccrrccccccrrccr',
+      'rccccccccccccccr',
+      'rccc,,,cc,,,cccr',
+      'rccc,,,cc,,,cccr',
+      'rccccccccccccccr',
+      'rccrrccccccrrccr',
+      'rccrrccccccrrccr',
+      'rccccccccccccccr',
+      'rccccccccccccccr',
+      'rrrrrrrPrrrrrrrr',
+      'rrrrrrrrrrrrrrrr'
+    ],
+    warps: [{ x: 7, y: 12, to: 'forest', tx: 7, ty: 1, dir: 'down' }],
+    objects: [{ x: 13, y: 11, item: 'REVIVE' }],
+    npcs: [
+      {
+        x: 7, y: 2, dir: 'down', look: { hat: 3, hair: 0, body: 3, trim: 0, cap: 1 }, id: 'champ',
+        trainer: {
+          name: 'SUMMIT ACE KAI', money: 2000, boss: 1,
+          team: [['SHADEPAW', 14], ['ZAPMOTH', 14], ['TIDALFIN', 16]]
+        },
+        text: ['Nobody climbs this far by accident.', 'Let us see what you are made of.'],
+        after: ['That was a real battle.', 'The summit is yours, CHAMPION.']
+      }
+    ],
+    encounters: { rate: 13, table: [['PEBBLIT', 10, 14], ['SHADEPAW', 11, 15], ['ZAPMOTH', 10, 13]] }
+  }
+};
+/* ============================================================
+   Game state
+   ============================================================ */
+const SAVE_KEY = 'pocket-monsters-verdant-v1';
+const G = {
+  mode: 'title',
+  map: 'home', px: 4, py: 4, dir: 'down',
+  offx: 0, offy: 0, moving: 0, stepFrame: 0, walkAnim: 0,
+  party: [], bag: {}, money: 1500, flags: {}, seen: {}, caught: {},
+  steps: 0, playtime: 0, started: 0
+};
+let frameCount = 0;
+const actors = {};                      // cached overworld sprite sets
+const spriteCache = {};                 // cached creature sprites
+
+function actorFor(look) {
+  const key = JSON.stringify(look);
+  if (!actors[key]) actors[key] = makeActor(look);
+  return actors[key];
+}
+function spriteFor(species, mirrored) {
+  const key = species + (mirrored ? '-m' : '');
+  if (!spriteCache[key]) {
+    const front = spriteCache[species] || (spriteCache[species] = creatureSprite(DEX[species].look));
+    spriteCache[key] = mirrored ? mirrorSprite(front) : front;
+  }
+  return spriteCache[key];
+}
+
+/* ---------------- monsters ---------------- */
+function statAt(base, level, isHp) {
+  return isHp ? Math.floor(base * 2 * level / 100) + level + 10
+              : Math.floor(base * 2 * level / 100) + 5;
+}
+function movesAt(species, level) {
+  const list = [];
+  DEX[species].learn.forEach(([lv, mv]) => { if (lv <= level && !list.includes(mv)) list.push(mv); });
+  return list.slice(-4).map(m => ({ id: m, pp: MOVES[m].pp, max: MOVES[m].pp }));
+}
+function makeMon(species, level) {
+  const d = DEX[species];
+  const m = {
+    species, level, exp: level * level * level,
+    hp: 0, maxhp: 0, status: 0, sleep: 0,
+    moves: movesAt(species, level), nick: species
+  };
+  m.maxhp = statAt(d.base.hp, level, true);
+  m.hp = m.maxhp;
+  return m;
+}
+const monAtk = m => statAt(DEX[m.species].base.atk, m.level) * (m.status === 'BRN' ? 0.6 : 1);
+const monDef = m => statAt(DEX[m.species].base.def, m.level);
+const monSpd = m => statAt(DEX[m.species].base.spd, m.level) * (m.status === 'PAR' ? 0.5 : 1);
+const expForLevel = lv => lv * lv * lv;
+const alive = m => m.hp > 0;
+const firstAlive = () => G.party.find(alive);
+const teamAlive = () => G.party.some(alive);
+
+function healParty() {
+  G.party.forEach(m => {
+    m.hp = m.maxhp; m.status = 0; m.sleep = 0;
+    m.moves.forEach(mv => { mv.pp = mv.max; });
+  });
+}
+function giveMon(mon) {
+  G.caught[mon.species] = 1; G.seen[mon.species] = 1;
+  if (G.party.length < 6) { G.party.push(mon); return true; }
+  return false;
+}
+function bagAdd(id, n) { G.bag[id] = (G.bag[id] || 0) + (n || 1); }
+function bagCount(id) { return G.bag[id] || 0; }
+function bagList() { return Object.keys(G.bag).filter(k => G.bag[k] > 0); }
+
+/* ============================================================
+   Script runner -- game flow is written as generators that yield
+   small tasks (say / ask / wait / anim), so dialogue and battle
+   sequences read top to bottom.
+   ============================================================ */
+let script = null, task = null;
+const ui = { box: null, menu: null, fade: 0, overlay: null };
+
+const say = (txt, o) => ({ t: 'say', txt, o: o || {} });
+const ask = (items, o) => ({ t: 'ask', items, o: o || {} });
+const waitF = n => ({ t: 'wait', n });
+const anim = f => ({ t: 'anim', f, k: 0 });
+/* a full-screen sub-mode (party list, bag, shop). update() returns
+   undefined to keep running, or a value to hand back to the script. */
+const screen = (draw, update, st) => Object.assign({ t: 'screen', draw, update }, st || {});
+
+function runScript(gen) { script = gen; ui.menu = null; pump(); }
+function pump(val) {
+  if (!script) return;
+  let r;
+  try { r = script.next(val); } catch (e) { console.error(e); script = null; task = null; return; }
+  if (r.done) { script = null; task = null; ui.box = null; ui.menu = null; return; }
+  task = r.value;
+  beginTask(task);
+}
+const scriptRunning = () => !!script;
+
+const MAXCH = () => Math.floor((W - 18) / ADV);
+function wrapText(str, max) {
+  const words = String(str).split(' '), out = []; let line = '';
+  words.forEach(w => {
+    if (!line.length) line = w;
+    else if ((line + ' ' + w).length <= max) line += ' ' + w;
+    else { out.push(line); line = w; }
+  });
+  if (line.length) out.push(line);
+  return out;
+}
+function beginTask(t) {
+  if (t.t === 'say') {
+    const lines = wrapText(t.txt, MAXCH());
+    const pages = [];
+    for (let i = 0; i < lines.length; i += 2) pages.push(lines.slice(i, i + 2));
+    ui.box = { pages, page: 0, chars: 0, done: false };
+  } else if (t.t === 'ask') {
+    ui.menu = { items: t.items, i: t.o.start || 0, o: t.o };
+  }
+}
+function updateScript() {
+  if (!task) return;
+  if (task.t === 'say') {
+    const b = ui.box, pg = b.pages[b.page] || [''];
+    const total = pg.join(' ').length;
+    if (!b.done) {
+      b.chars += down('a') || down('b') ? 3 : 1;
+      if (b.chars >= total) { b.chars = total; b.done = true; }
+    } else if (hit('a') || hit('b')) {
+      if (b.page < b.pages.length - 1) { b.page++; b.chars = 0; b.done = false; audio.sfx.cursor(); }
+      else { ui.box = null; pump(); }
+    }
+  } else if (task.t === 'ask') {
+    const m = ui.menu, n = m.items.length;
+    const cols = m.o.cols || 1;
+    if (hit('up')) { m.i = (m.i - cols + n) % n; audio.sfx.cursor(); }
+    if (hit('down')) { m.i = (m.i + cols) % n; audio.sfx.cursor(); }
+    if (cols > 1) {
+      if (hit('left') && m.i % cols) { m.i--; audio.sfx.cursor(); }
+      if (hit('right') && m.i % cols < cols - 1 && m.i + 1 < n) { m.i++; audio.sfx.cursor(); }
+    }
+    if (hit('a')) { audio.sfx.select(); const i = m.i; ui.menu = null; pump(i); }
+    else if (hit('b') && m.o.cancel !== false) { audio.sfx.back(); ui.menu = null; pump(-1); }
+  } else if (task.t === 'screen') {
+    const r = task.update(task);
+    if (r !== undefined) pump(r);
+  } else if (task.t === 'wait') {
+    if (--task.n <= 0) pump();
+  } else if (task.t === 'anim') {
+    if (task.f(task.k++)) pump();
+  }
+}
+
+/* ---------------- text box + menu drawing ---------------- */
+function drawBox() {
+  if (!ui.box) return;
+  const b = ui.box, h = 42, y = H - h;
+  window9(0, y, W, h);
+  const pg = b.pages[b.page] || [];
+  let budget = b.chars;
+  pg.forEach((line, i) => {
+    const shown = line.slice(0, Math.max(0, budget));
+    budget -= line.length;
+    text(shown, 9, y + 9 + i * 12);
+  });
+  if (b.done && (frameCount >> 4) % 2) {
+    const ax = W - 14, ay = y + h - 12;
+    rect(ax, ay, 5, 1, 3); rect(ax + 1, ay + 1, 3, 1, 3); rect(ax + 2, ay + 2, 1, 1, 3);
+  }
+}
+function drawMenu() {
+  if (!ui.menu) return;
+  const m = ui.menu, o = m.o;
+  const cols = o.cols || 1;
+  const rows = Math.ceil(m.items.length / cols);
+  const cw = o.w || (Math.max.apply(null, m.items.map(s => textW(s))) + 20);
+  const w = o.w || cw * cols, h = rows * 12 + 10;
+  const x = o.x === undefined ? W - w - 2 : o.x;
+  const y = o.y === undefined ? 2 : o.y;
+  window9(x, y, w, h);
+  m.items.forEach((it, i) => {
+    const cx = x + 12 + (i % cols) * (w - 14) / cols;
+    const cy = y + 6 + Math.floor(i / cols) * 12;
+    text(it, cx, cy);
+    if (i === m.i) text('>', cx - 8, cy);
+  });
+}
+
+/* ---------------- transitions ---------------- */
+const DITHER = [
+  [], [[0, 0]], [[0, 0], [2, 2]], [[0, 0], [2, 2], [1, 1], [3, 3]],
+  [[0, 0], [2, 2], [1, 1], [3, 3], [2, 0], [0, 2], [3, 1], [1, 3]]
+];
+function drawFade(level) {
+  if (level <= 0) return;
+  if (level >= 5) { rect(0, 0, W, H, 3); return; }
+  ctx.fillStyle = PAL[3];
+  const pts = DITHER[level];
+  for (let y = 0; y < H; y += 4) for (let x = 0; x < W; x += 4)
+    pts.forEach(([dx, dy]) => ctx.fillRect(x + dx, y + dy, 1, 1));
+}
+const fadeOut = () => anim(k => { ui.fade = Math.min(5, 1 + (k >> 2)); return ui.fade >= 5; });
+const fadeIn = () => anim(k => { ui.fade = Math.max(0, 5 - (k >> 2)); return ui.fade <= 0; });
+
+/* ============================================================
+   Overworld
+   ============================================================ */
+const DIRV = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const curMap = () => MAPS[G.map];
+function tileAt(map, x, y) {
+  const m = MAPS[map];
+  if (y < 0 || y >= m.rows.length) return 'T';
+  const row = m.rows[y];
+  if (x < 0 || x >= row.length) return 'T';
+  return row[x];
+}
+function npcAt(x, y) { return (curMap().npcs || []).find(n => n.x === x && n.y === y && !npcGone(n)); }
+function npcGone(n) { return n.item && G.flags['item-' + G.map + '-' + n.x + '-' + n.y]; }
+function objAt(x, y) { return (curMap().objects || []).find(o => o.x === x && o.y === y); }
+function warpAt(x, y) { return (curMap().warps || []).find(w => w.x === x && w.y === y); }
+function blocked(x, y) {
+  const t = TILE[tileAt(G.map, x, y)];
+  if (!t || t.solid) return true;
+  if (npcAt(x, y)) return true;
+  const o = objAt(x, y);
+  if (o && o.item && !G.flags['item-' + G.map + '-' + x + '-' + y]) return true;
+  return false;
+}
+
+function enterMap(name, x, y, dir) {
+  G.map = name; G.px = x; G.py = y; G.dir = dir || G.dir;
+  G.offx = 0; G.offy = 0; G.moving = 0;
+  audio.play(MAPS[name].music);
+}
+
+const cam = { x: 0, y: 0 };
+function updateCamera() {
+  const m = curMap();
+  const mw = m.rows[0].length * TS, mh = m.rows.length * TS;
+  const cx = G.px * TS + G.offx + TS / 2, cy = G.py * TS + G.offy + TS / 2;
+  cam.x = mw <= W ? (mw - W) / 2 : Math.max(0, Math.min(mw - W, cx - W / 2));
+  cam.y = mh <= H ? (mh - H) / 2 : Math.max(0, Math.min(mh - H, cy - H / 2));
+  cam.x = Math.round(cam.x); cam.y = Math.round(cam.y);
+}
+
+function drawWorld() {
+  const m = curMap();
+  clear(m.indoor ? 0 : 1);
+  const f = (frameCount >> 5) & 1;
+  const x0 = Math.floor(cam.x / TS), y0 = Math.floor(cam.y / TS);
+  for (let ty = y0; ty <= y0 + H / TS + 1; ty++) {
+    for (let tx = x0; tx <= x0 + W / TS + 1; tx++) {
+      const ch = tileAt(G.map, tx, ty);
+      const set = tiles[ch];
+      if (set) ctx.drawImage(set[f], tx * TS - cam.x, ty * TS - cam.y);
+    }
+  }
+  // item balls lying on the ground
+  (m.objects || []).forEach(o => {
+    if (!o.item || G.flags['item-' + G.map + '-' + o.x + '-' + o.y]) return;
+    ctx.drawImage(ballSprite, o.x * TS - cam.x + 2, o.y * TS - cam.y + 3);
+  });
+  // people
+  (m.npcs || []).forEach(n => {
+    const set = actorFor(n.look || {});
+    ctx.drawImage(set[n.dir || 'down'][0], n.x * TS - cam.x, n.y * TS - cam.y);
+  });
+  // player
+  const pf = G.moving ? [0, 1, 0, 3][(G.walkAnim >> 2) & 3] : 0;
+  ctx.drawImage(actorFor(PLAYER_LOOK)[G.dir][pf],
+    G.px * TS + G.offx - cam.x, G.py * TS + G.offy - cam.y);
+  // grass tufts drawn over the feet sell the "standing in grass" look
+  if (tileAt(G.map, G.px, G.py) === ',') {
+    const gx = G.px * TS + G.offx - cam.x, gy = G.py * TS + G.offy - cam.y;
+    for (let i = 0; i < 4; i++) { px(ctx, gx + i * 4 + 1, gy + 10, 2, 1, 5); px(ctx, gx + i * 4 + 2, gy + 12, 3, 1, 3); }
+  }
+}
+const PLAYER_LOOK = { hat: 2, hair: 3, body: 3, trim: 0, cap: 1 };
+
+/* ---------------- overworld interaction ---------------- */
+function* pickupFlow(o) {
+  const n = o.count || 1;
+  bagAdd(o.item, n);
+  G.flags['item-' + G.map + '-' + o.x + '-' + o.y] = 1;
+  audio.sfx.select();
+  yield say('You found ' + (n > 1 ? n + ' ' : '') + ITEMS[o.item].label + (n > 1 ? 'S!' : '!'));
+}
+function* healFlow() {
+  audio.sfx.heal();
+  healParty();
+  yield say('Your team is fully rested.');
+}
+function* signFlow(lines) {
+  for (const l of lines) yield say(l);
+}
+function* talkFlow(n) {
+  if (n.dir !== undefined && !n.fixed) {
+    const back = { up: 'down', down: 'up', left: 'right', right: 'left' };
+    n.dir = back[G.dir];
+  }
+  if (n.prof) { yield* profFlow(n); return; }
+  if (n.nurse) { yield* nurseFlow(); return; }
+  if (n.shop) { yield* shopFlow(); return; }
+  if (n.trainer && !G.flags['beat-' + n.id]) { yield* trainerFlow(n); return; }
+  const lines = (n.trainer && G.flags['beat-' + n.id] && n.after) ? n.after : n.text;
+  for (const l of lines) yield say(l);
+}
+
+function* profFlow(n) {
+  if (!G.flags.starter) {
+    yield say('PROF. HOLLY: There you are!');
+    yield say('The wild monsters out there are getting bold. Nobody has walked the summit trail in years.');
+    yield say('Take one of mine. Pick the partner that speaks to you.');
+    let choice = -1;
+    while (choice < 0) {
+      choice = yield ask(['FLAREPUP', 'AQUAFIN', 'LEAFLING'], { cancel: false });
+      const sp = ['FLAREPUP', 'AQUAFIN', 'LEAFLING'][choice];
+      G.seen[sp] = 1;
+      yield say(sp + ', the ' + DEX[sp].type + ' type. Is that your pick?');
+      const yes = yield ask(['YES', 'NO'], { cancel: false });
+      if (yes !== 0) choice = -1;
+    }
+    const sp = ['FLAREPUP', 'AQUAFIN', 'LEAFLING'][choice];
+    const mon = makeMon(sp, 5);
+    giveMon(mon);
+    G.flags.starter = sp;
+    audio.sfx.level();
+    yield say('You received ' + sp + '!');
+    bagAdd('BALL', 5); bagAdd('POTION', 2);
+    yield say('Here, take 5 BALLS and 2 POTIONS too.');
+    yield say('Weaken a wild monster, then throw a BALL. That is how a team grows.');
+    yield say('Head north through ROUTE 1. I want to see how far you get.');
+  } else if (!G.flags.champion) {
+    yield say('PROF. HOLLY: The summit is past WHISPER WOODS.');
+    yield say('Catch plenty on the way. A wide team beats a strong one.');
+  } else {
+    yield say('PROF. HOLLY: CHAMPION of the summit! I always knew it.');
+  }
+}
+function* nurseFlow() {
+  yield say('Welcome! Shall I heal your monsters?');
+  const c = yield ask(['YES', 'NO']);
+  if (c === 0) {
+    audio.sfx.heal();
+    yield waitF(30);
+    healParty();
+    yield say('Your team is glowing with health!');
+  } else yield say('Come back any time.');
+}
+function* trainerFlow(n) {
+  for (const l of n.text) yield say(l);
+  const won = yield* battleFlow({ trainer: n.trainer, npc: n });
+  if (won) {
+    G.flags['beat-' + n.id] = 1;
+    G.money += n.trainer.money;
+    yield say(n.trainer.name + ' paid you ' + n.trainer.money + '!');
+    if (n.after) for (const l of n.after) yield say(l);
+    if (n.trainer.boss) {
+      G.flags.champion = 1;
+      audio.play('victory');
+      yield say('The wind at the summit goes quiet.');
+      yield say('You and your team stand at the top of the region.');
+      yield say('*** CHAMPION ***');
+      yield say('Thanks for playing POCKET MONSTERS: VERDANT!');
+      audio.play(curMap().music);
+    }
+  }
+}
+
+function tryInteract() {
+  const [dx, dy] = DIRV[G.dir];
+  const tx = G.px + dx, ty = G.py + dy;
+  const n = npcAt(tx, ty);
+  if (n) { runScript(talkFlow(n)); return; }
+  // talking across a counter
+  if (TILE[tileAt(G.map, tx, ty)] && TILE[tileAt(G.map, tx, ty)].name === 'counter') {
+    const n2 = npcAt(tx + dx, ty + dy);
+    if (n2) { runScript(talkFlow(n2)); return; }
+  }
+  const o = objAt(tx, ty) || objAt(G.px, G.py);
+  if (o) {
+    if (o.item && !G.flags['item-' + G.map + '-' + o.x + '-' + o.y]) { runScript(pickupFlow(o)); return; }
+    if (o.heal) { runScript(healFlow()); return; }
+    if (o.text) { runScript(signFlow(o.text)); return; }
+  }
+}
+
+function checkEncounter() {
+  const m = curMap();
+  if (!m.encounters) return false;
+  if (tileAt(G.map, G.px, G.py) !== ',') return false;
+  if (Math.random() * 100 >= m.encounters.rate) return false;
+  const t = m.encounters.table[Math.floor(Math.random() * m.encounters.table.length)];
+  const level = t[1] + Math.floor(Math.random() * (t[2] - t[1] + 1));
+  runScript(wildFlow(makeMon(t[0], level)));
+  return true;
+}
+function* wildFlow(mon) {
+  yield* battleFlow({ wild: mon });
+}
+
+/* line of sight: a trainer who spots you starts the fight */
+function checkTrainerSight() {
+  const m = curMap();
+  for (const n of (m.npcs || [])) {
+    if (!n.trainer || G.flags['beat-' + n.id]) continue;
+    const [dx, dy] = DIRV[n.dir || 'down'];
+    for (let d = 1; d <= 4; d++) {
+      const x = n.x + dx * d, y = n.y + dy * d;
+      if (TILE[tileAt(G.map, x, y)].solid) break;
+      if (x === G.px && y === G.py) { runScript(spottedFlow(n)); return true; }
+      if (npcAt(x, y)) break;
+    }
+  }
+  return false;
+}
+function* spottedFlow(n) {
+  audio.sfx.select();
+  yield anim(k => {
+    // exclamation mark above the trainer
+    const bx = n.x * TS - cam.x + 5, by = n.y * TS - cam.y - 10;
+    ui.overlay = () => { window9(bx - 3, by, 12, 14); rect(bx + 3, by + 3, 2, 5, 3); rect(bx + 3, by + 9, 2, 2, 3); };
+    return k > 40;
+  });
+  ui.overlay = null;
+  // walk the trainer up to the player
+  const [dx, dy] = DIRV[n.dir || 'down'];
+  yield anim(k => {
+    if (k % 8 === 0) {
+      const nx = n.x + dx, ny = n.y + dy;
+      const stopX = G.px - dx, stopY = G.py - dy;
+      if (n.x === stopX && n.y === stopY) return true;
+      if (blocked(nx, ny)) return true;
+      n.x = nx; n.y = ny;
+    }
+    return false;
+  });
+  yield* trainerFlow(n);
+}
+
+function updateWorld() {
+  if (scriptRunning()) { updateScript(); return; }
+  if (hit('start')) { runScript(startMenuFlow()); return; }
+
+  if (G.moving > 0) {
+    const [dx, dy] = DIRV[G.dir];
+    G.moving--; G.walkAnim++;
+    G.offx = dx * (G.moving * 2); G.offy = dy * (G.moving * 2);
+    if (G.moving === 0) {
+      G.px += dx; G.py += dy; G.offx = 0; G.offy = 0; G.steps++;
+      const w = warpAt(G.px, G.py);
+      if (w) { runScript(warpFlow(w)); return; }
+      if (checkEncounter()) return;
+      if (checkTrainerSight()) return;
+    }
+    return;
+  }
+  if (hit('a')) { tryInteract(); return; }
+
+  let dir = null;
+  ['up', 'down', 'left', 'right'].forEach(d => { if (down(d) && !dir) dir = d; });
+  if (dir) {
+    if (G.dir !== dir && G.turnDelay === undefined) { G.dir = dir; G.turnDelay = 4; }
+    G.dir = dir;
+    if (G.turnDelay > 0) { G.turnDelay--; return; }
+    const [dx, dy] = DIRV[dir];
+    if (!blocked(G.px + dx, G.py + dy)) { G.moving = 8; G.walkAnim = 0; }
+    else if (frameCount % 20 === 0) audio.sfx.bump();
+  } else { G.turnDelay = undefined; }
+}
+function* warpFlow(w) {
+  yield fadeOut();
+  enterMap(w.to, w.tx, w.ty, w.dir);
+  updateCamera();
+  yield waitF(6);
+  yield fadeIn();
+  if (MAPS[w.to].name && !G.flags['visited-' + w.to]) {
+    G.flags['visited-' + w.to] = 1;
+    yield anim(k => { ui.overlay = () => { window9(4, 4, textW(MAPS[w.to].name) + 16, 18); text(MAPS[w.to].name, 12, 9); }; return k > 90; });
+    ui.overlay = null;
+  }
+}
+
+/* ---------------- save / load ---------------- */
+function saveGame() {
+  try {
+    const data = {
+      map: G.map, px: G.px, py: G.py, dir: G.dir,
+      party: G.party, bag: G.bag, money: G.money, flags: G.flags,
+      seen: G.seen, caught: G.caught, steps: G.steps, playtime: G.playtime
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    return true;
+  } catch (e) { return false; }
+}
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    Object.assign(G, d);
+    G.offx = 0; G.offy = 0; G.moving = 0;
+    return true;
+  } catch (e) { return false; }
+}
+function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
+/* ============================================================
+   Shared screens: party, bag, shop
+   ============================================================ */
+function hpBar(x, y, w, cur, max) {
+  frameRect(x - 1, y - 1, w + 2, 5, 3);
+  rect(x, y, w, 3, 0);
+  const ratio = Math.max(0, cur / max);
+  const fill = Math.ceil(w * ratio);
+  const shade = ratio > 0.5 ? 2 : 3;
+  if (fill > 0) rect(x, y, fill, 3, shade);
+  if (ratio <= 0.2 && ratio > 0 && (frameCount >> 3) % 2 === 0) rect(x, y, fill, 3, 0);
+}
+function drawMonRow(m, x, y, selected) {
+  text(m.nick, x + 8, y);
+  text(':L' + m.level, x + 8 + textW(m.nick), y);
+  text('HP', x + 8, y + 10, 3);
+  hpBar(x + 8 + textW('HP') + 2, y + 12, 40, m.hp, m.maxhp);
+  textRight(m.hp + '/' + m.maxhp, W - 8, y + 10);
+  if (m.hp <= 0) text('FNT', x + 8 + textW('HP') + 46, y + 10);
+  else if (m.status) text(m.status, x + 8 + textW('HP') + 46, y + 10);
+  if (selected) text('>', x, y + 5);
+}
+
+function partyScreen(title, filter) {
+  let i = 0;
+  return screen(
+    () => {
+      clear(0);
+      window9(0, 0, W, H - 20);
+      text(title, 6, 4);
+      G.party.forEach((m, k) => drawMonRow(m, 4, 16 + k * 20, k === i));
+      window9(0, H - 20, W, 20);
+      text('A: CHOOSE   B: BACK', 6, H - 14);
+    },
+    () => {
+      const n = G.party.length;
+      if (hit('up')) { i = (i - 1 + n) % n; audio.sfx.cursor(); }
+      if (hit('down')) { i = (i + 1) % n; audio.sfx.cursor(); }
+      if (hit('a')) {
+        if (filter && !filter(G.party[i])) { audio.sfx.back(); return undefined; }
+        audio.sfx.select(); return i;
+      }
+      if (hit('b')) { audio.sfx.back(); return -1; }
+      return undefined;
+    }
+  );
+}
+
+function bagScreen() {
+  let i = 0;
+  return screen(
+    () => {
+      clear(0);
+      window9(0, 0, W, H - 34);
+      text('ITEMS', 6, 4);
+      const list = bagList();
+      if (!list.length) text('Nothing in here.', 12, 20);
+      list.forEach((id, k) => {
+        const y = 18 + k * 12;
+        if (y > H - 46) return;
+        text(ITEMS[id].label, 12, y);
+        textRight('x' + bagCount(id), W - 10, y);
+        if (k === i) text('>', 4, y);
+      });
+      window9(0, H - 34, W, 34);
+      const cur = bagList()[i];
+      text(cur ? ITEMS[cur].desc : 'B: BACK', 6, H - 26);
+      text('$' + G.money, 6, H - 14);
+    },
+    () => {
+      const list = bagList(), n = list.length;
+      if (n) {
+        if (hit('up')) { i = (i - 1 + n) % n; audio.sfx.cursor(); }
+        if (hit('down')) { i = (i + 1) % n; audio.sfx.cursor(); }
+        if (hit('a')) { audio.sfx.select(); return list[i]; }
+      }
+      if (hit('b')) { audio.sfx.back(); return -1; }
+      if (i >= n) i = Math.max(0, n - 1);
+      return undefined;
+    }
+  );
+}
+
+function* useItemFlow(id, inBattle) {
+  const it = ITEMS[id];
+  if (it.kind === 'ball') {
+    if (!inBattle) { yield say('There is no target right now.'); return false; }
+    return 'ball';
+  }
+  if (it.kind === 'heal' || it.kind === 'revive' || it.kind === 'pp') {
+    const pick = yield partyScreen('USE ' + it.label + ' ON?');
+    if (pick < 0) return false;
+    const m = G.party[pick];
+    if (it.kind === 'heal') {
+      if (m.hp <= 0) { yield say(m.nick + ' has fainted. Use a REVIVE.'); return false; }
+      if (m.hp >= m.maxhp) { yield say(m.nick + ' is already at full HP.'); return false; }
+      const before = m.hp;
+      m.hp = Math.min(m.maxhp, m.hp + it.amount);
+      G.bag[id]--; audio.sfx.heal();
+      yield say(m.nick + ' recovered ' + (m.hp - before) + ' HP!');
+    } else if (it.kind === 'revive') {
+      if (m.hp > 0) { yield say(m.nick + ' does not need that.'); return false; }
+      m.hp = Math.ceil(m.maxhp / 2); m.status = 0;
+      G.bag[id]--; audio.sfx.heal();
+      yield say(m.nick + ' is back on its feet!');
+    } else {
+      m.moves.forEach(mv => { mv.pp = Math.min(mv.max, mv.pp + 10); });
+      G.bag[id]--; audio.sfx.heal();
+      yield say(m.nick + ' regained some PP.');
+    }
+    return true;
+  }
+  return false;
+}
+
+function* shopFlow() {
+  yield say('Welcome! What can I get you?');
+  while (true) {
+    const c = yield ask(['BUY', 'SELL', 'LEAVE'], { x: W - 76, y: 2 });
+    if (c === 1) { yield say('Sorry, I only buy in bulk. Nothing today.'); continue; }
+    if (c !== 0) break;
+    let i = 0;
+    const pick = yield screen(
+      () => {
+        clear(0);
+        window9(0, 0, W, H - 34);
+        text('SHOP', 6, 4);
+        SHOP_STOCK.forEach((id, k) => {
+          const y = 18 + k * 12;
+          text(ITEMS[id].label, 12, y);
+          textRight('$' + ITEMS[id].price, W - 10, y);
+          if (k === i) text('>', 4, y);
+        });
+        window9(0, H - 34, W, 34);
+        text(ITEMS[SHOP_STOCK[i]].desc, 6, H - 26);
+        text('MONEY $' + G.money, 6, H - 14);
+      },
+      () => {
+        const n = SHOP_STOCK.length;
+        if (hit('up')) { i = (i - 1 + n) % n; audio.sfx.cursor(); }
+        if (hit('down')) { i = (i + 1) % n; audio.sfx.cursor(); }
+        if (hit('a')) { audio.sfx.select(); return i; }
+        if (hit('b')) { audio.sfx.back(); return -1; }
+        return undefined;
+      }
+    );
+    if (pick < 0) continue;
+    const id = SHOP_STOCK[pick], price = ITEMS[id].price;
+    const qtyChoice = yield ask(['x1', 'x3', 'x5', 'CANCEL'], { x: W - 62, y: 2 });
+    if (qtyChoice < 0 || qtyChoice === 3) continue;
+    const qty = [1, 3, 5][qtyChoice];
+    const cost = price * qty;
+    if (cost > G.money) { yield say('Not enough money for that.'); continue; }
+    G.money -= cost; bagAdd(id, qty);
+    audio.sfx.save();
+    yield say(qty + ' ' + ITEMS[id].label + (qty > 1 ? 'S' : '') + ' for $' + cost + '. Thanks!');
+  }
+  yield say('Come again!');
+}
+
+/* ---------------- start menu ---------------- */
+function* startMenuFlow() {
+  while (true) {
+    const c = yield ask(['MON', 'BAG', 'DEX', 'SAVE', 'SOUND', 'EXIT'], { x: W - 66, y: 2 });
+    if (c === 0) {
+      if (!G.party.length) { yield say('You have no monsters yet.'); continue; }
+      const pick = yield partyScreen('YOUR TEAM');
+      if (pick >= 0) yield* monDetailFlow(pick);
+    } else if (c === 1) {
+      const id = yield bagScreen();
+      if (id !== -1) yield* useItemFlow(id, false);
+    } else if (c === 2) {
+      yield* dexFlow();
+    } else if (c === 3) {
+      const ok = saveGame();
+      audio.sfx.save();
+      yield say(ok ? 'Game saved to this device.' : 'Could not save on this browser.');
+    } else if (c === 4) {
+      audio.on = !audio.on;
+      if (audio.on) audio.unlock();
+      yield say('SOUND ' + (audio.on ? 'ON' : 'OFF') + '.');
+    } else break;
+  }
+}
+function* monDetailFlow(idx) {
+  const m = G.party[idx];
+  const d = DEX[m.species];
+  yield screen(
+    () => {
+      clear(0);
+      window9(0, 0, W, H);
+      ctx.drawImage(spriteFor(m.species), 2, 8);
+      text(m.nick, 54, 8);
+      text('L' + m.level, 54, 20);
+      text(d.type, 54, 32);
+      text('HP ' + m.hp + '/' + m.maxhp, 54, 44);
+      text('ATK ' + Math.round(monAtk(m)), 4, 58);
+      text('DEF ' + monDef(m), 4, 70);
+      text('SPD ' + Math.round(monSpd(m)), 84, 58);
+      const need = expForLevel(m.level + 1) - m.exp;
+      text('NEXT ' + Math.max(0, need), 84, 70);
+      m.moves.forEach((mv, i) => {
+        text(moveName(mv.id), 8, 84 + i * 12);
+        textRight('PP ' + mv.pp + '/' + mv.max, W - 8, 84 + i * 12);
+      });
+      text('B: BACK', 8, 132);
+    },
+    () => (hit('b') || hit('a')) ? (audio.sfx.back(), -1) : undefined
+  );
+}
+function* dexFlow() {
+  const list = Object.keys(DEX);
+  let i = 0;
+  yield screen(
+    () => {
+      clear(0);
+      window9(0, 0, W, H);
+      text('MONSTER DEX', 6, 5);
+      const seen = list.filter(s => G.seen[s]).length, caught = list.filter(s => G.caught[s]).length;
+      text('SEEN ' + seen + '  OWN ' + caught, 6, 17);
+      const sp = list[i];
+      const known = G.seen[sp];
+      text('No.' + String(DEX[sp].no).padStart(3, '0'), 6, 33);
+      text(known ? sp : '----------', 6, 45);
+      if (known) {
+        text(DEX[sp].type, 6, 57);
+        ctx.drawImage(spriteFor(sp), W - 52, 26);
+        text(G.caught[sp] ? 'CAUGHT' : 'SEEN ONLY', 6, 69);
+      }
+      text('< >  BROWSE    B: BACK', 6, H - 16);
+    },
+    () => {
+      if (hit('left') || hit('up')) { i = (i - 1 + list.length) % list.length; audio.sfx.cursor(); }
+      if (hit('right') || hit('down')) { i = (i + 1) % list.length; audio.sfx.cursor(); }
+      if (hit('b') || hit('a')) { audio.sfx.back(); return -1; }
+      return undefined;
+    }
+  );
+}
+
+/* ============================================================
+   Battle
+   ============================================================ */
+let B = null;
+
+function drawPlatform(cx, cy, w) {
+  rect(cx - w / 2, cy, w, 2, 2);
+  rect(cx - w / 2 + 3, cy + 2, w - 6, 1, 3);
+}
+function drawInfo(m, x, y, isPlayer) {
+  const w = isPlayer ? 84 : 86, h = isPlayer ? 34 : 26;
+  window9(x, y, w, h);
+  text(m.nick, x + 6, y + 5);
+  textRight('L' + m.level, x + w - 6, y + 5);
+  text('HP', x + 6, y + 16);
+  hpBar(x + 22, y + 18, w - 34, m.hp, m.maxhp);
+  if (isPlayer) textRight(m.hp + '/' + m.maxhp, x + w - 6, y + 24);
+  if (m.status) text(m.status, x + 6, y + (isPlayer ? 24 : 16) + (isPlayer ? 0 : 0));
+}
+function drawBattle() {
+  clear(0);
+  // scenery
+  rect(0, 0, W, 62, 0);
+  drawPlatform(128, 52, 58);
+  drawPlatform(32, 96, 64);
+  if (B) {
+    if (B.foeShow) {
+      const sx = 104 + (B.foeSlide || 0) + (B.foeShake || 0);
+      if (!B.foeHide) {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(98, 4, 60, 48 - (B.foeSink || 0)); ctx.clip();
+        if (!(B.foeFlash && (frameCount >> 1) % 2)) ctx.drawImage(spriteFor(B.foe.species), sx, 4);
+        ctx.restore();
+      }
+      drawInfo(B.foe, 4, 6, false);
+    }
+    if (B.meShow && B.me) {
+      const sx = 8 + (B.meSlide || 0) + (B.meShake || 0);
+      if (!B.meHide) {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(2, 48, 60, 48 - (B.meSink || 0)); ctx.clip();
+        if (!(B.meFlash && (frameCount >> 1) % 2)) ctx.drawImage(spriteFor(B.me.species, true), sx, 48);
+        ctx.restore();
+      }
+      drawInfo(B.me, 72, 62, true);
+    }
+    if (B.ball) ctx.drawImage(ballSprite, B.ball.x, B.ball.y);
+  }
+}
+
+function damage(atk, def, move, attacker, defender) {
+  const m = MOVES[move];
+  if (!m.pow) return { dmg: 0, eff: 1, crit: false };
+  const eff = typeMult(m.type, DEX[defender.species].type);
+  const stab = m.type === DEX[attacker.species].type ? 1.5 : 1;
+  const crit = Math.random() < 0.0625;
+  const base = Math.floor(Math.floor(Math.floor(2 * attacker.level / 5 + 2) * m.pow * atk / def) / 50) + 2;
+  const rand = 0.85 + Math.random() * 0.15;
+  let dmg = Math.floor(base * eff * stab * rand * (crit ? 1.8 : 1));
+  return { dmg: Math.max(eff === 0 ? 0 : 1, dmg), eff, crit };
+}
+
+function animateHp(target, to, side) {
+  return anim(() => {
+    const step = Math.max(1, Math.round(target.maxhp / 40));
+    if (target.hp > to) target.hp = Math.max(to, target.hp - step);
+    else if (target.hp < to) target.hp = Math.min(to, target.hp + step);
+    void side;
+    return target.hp === to;
+  });
+}
+function attackAnim(isPlayer) {
+  return anim(k => {
+    const push = k < 6 ? k : (k < 12 ? 12 - k : 0);
+    if (isPlayer) { B.meShake = push * 2; B.foeFlash = k >= 8 && k < 20; }
+    else { B.foeShake = -push * 2; B.meFlash = k >= 8 && k < 20; }
+    if (k >= 20) { B.meShake = 0; B.foeShake = 0; B.meFlash = false; B.foeFlash = false; return true; }
+    return false;
+  });
+}
+function faintAnim(isPlayer) {
+  return anim(k => {
+    if (isPlayer) B.meSink = k * 2; else B.foeSink = k * 2;
+    if (k * 2 >= 48) {
+      if (isPlayer) { B.meHide = true; B.meSink = 0; } else { B.foeHide = true; B.foeSink = 0; }
+      return true;
+    }
+    return false;
+  });
+}
+
+function* useMove(attacker, defender, moveEntry, isPlayer) {
+  const move = moveEntry.id, m = MOVES[move];
+  if (attacker.status === 'SLP') {
+    if (attacker.sleep > 0) {
+      attacker.sleep--;
+      yield say(attacker.nick + ' is fast asleep.');
+      if (attacker.sleep === 0) { attacker.status = 0; yield say(attacker.nick + ' woke up!'); }
+      return;
+    }
+    attacker.status = 0;
+    yield say(attacker.nick + ' woke up!');
+  }
+  if (attacker.status === 'PAR' && Math.random() < 0.25) {
+    yield say(attacker.nick + ' is paralysed and cannot move!');
+    return;
+  }
+  moveEntry.pp = Math.max(0, moveEntry.pp - 1);
+  yield say((isPlayer ? '' : 'Foe ') + attacker.nick + ' used ' + moveName(move) + '!');
+
+  if (Math.random() * 100 > m.acc) {
+    yield say('The attack missed!');
+    return;
+  }
+  yield attackAnim(isPlayer);
+
+  if (m.pow > 0) {
+    const res = damage(monAtk(attacker) * (attacker.boostAtk || 1),
+                       monDef(defender) * (defender.boostDef || 1), move, attacker, defender);
+    if (res.eff >= 2) audio.sfx.superHit(); else audio.sfx.hit();
+    const to = Math.max(0, defender.hp - res.dmg);
+    yield animateHp(defender, to, !isPlayer);
+    if (res.crit) yield say('A critical hit!');
+    if (res.eff === 0) yield say('It has no effect...');
+    else if (res.eff > 1) yield say('It is super effective!');
+    else if (res.eff < 1) yield say('It is not very effective...');
+    if (m.effect === 'drain' && res.dmg > 0) {
+      const heal = Math.max(1, Math.floor(res.dmg / 2));
+      yield animateHp(attacker, Math.min(attacker.maxhp, attacker.hp + heal), isPlayer);
+      yield say(attacker.nick + ' drained health!');
+    }
+    if (m.effect && m.chance && defender.hp > 0 && !defender.status && Math.random() * 100 < m.chance) {
+      defender.status = m.effect.toUpperCase();
+      yield say((isPlayer ? 'Foe ' : '') + defender.nick + ' was ' + (m.effect === 'brn' ? 'burned' : 'paralysed') + '!');
+    }
+  } else {
+    if (m.effect === 'atk+') { attacker.boostAtk = Math.min(2, (attacker.boostAtk || 1) + 0.5); yield say(attacker.nick + '\'s ATTACK rose!'); }
+    else if (m.effect === 'def+') { attacker.boostDef = Math.min(2, (attacker.boostDef || 1) + 0.5); yield say(attacker.nick + '\'s DEFENCE rose!'); }
+    else if (m.effect === 'atk-') { defender.boostAtk = Math.max(0.5, (defender.boostAtk || 1) - 0.35); yield say(defender.nick + '\'s ATTACK fell!'); }
+    else if (m.effect === 'def-') { defender.boostDef = Math.max(0.5, (defender.boostDef || 1) - 0.35); yield say(defender.nick + '\'s DEFENCE fell!'); }
+    else if (m.effect === 'slp') {
+      if (defender.status) yield say('It had no effect.');
+      else { defender.status = 'SLP'; defender.sleep = 2 + Math.floor(Math.random() * 3); yield say(defender.nick + ' fell asleep!'); }
+    } else if (m.effect === 'heal') {
+      if (attacker.hp >= attacker.maxhp) yield say('HP is already full.');
+      else {
+        yield animateHp(attacker, Math.min(attacker.maxhp, attacker.hp + Math.floor(attacker.maxhp / 2)), isPlayer);
+        audio.sfx.heal();
+        yield say(attacker.nick + ' recovered HP!');
+      }
+    }
+  }
+}
+function* endOfTurnStatus(mon, isPlayer) {
+  if (mon.hp > 0 && mon.status === 'BRN') {
+    const to = Math.max(0, mon.hp - Math.max(1, Math.floor(mon.maxhp / 16)));
+    yield animateHp(mon, to, isPlayer);
+    yield say((isPlayer ? '' : 'Foe ') + mon.nick + ' is hurt by its burn!');
+  }
+}
+
+function* gainExp(mon, foe) {
+  const gain = Math.max(1, Math.floor(DEX[foe.species].xp * foe.level / 7));
+  mon.exp += gain;
+  yield say(mon.nick + ' gained ' + gain + ' EXP!');
+  while (mon.level < 60 && mon.exp >= expForLevel(mon.level + 1)) {
+    mon.level++;
+    const oldMax = mon.maxhp;
+    mon.maxhp = statAt(DEX[mon.species].base.hp, mon.level, true);
+    mon.hp += mon.maxhp - oldMax;
+    audio.sfx.level();
+    yield say(mon.nick + ' grew to level ' + mon.level + '!');
+    for (const [lv, mv] of DEX[mon.species].learn) {
+      if (lv !== mon.level) continue;
+      if (mon.moves.some(x => x.id === mv)) continue;
+      if (mon.moves.length < 4) {
+        mon.moves.push({ id: mv, pp: MOVES[mv].pp, max: MOVES[mv].pp });
+        yield say(mon.nick + ' learned ' + moveName(mv) + '!');
+      } else {
+        yield say(mon.nick + ' wants to learn ' + moveName(mv) + '.');
+        yield say('But it already knows four moves.');
+        const c = yield ask(['FORGET ONE', 'SKIP'], { x: W - 84, y: 2 });
+        if (c === 0) {
+          const pick = yield ask(mon.moves.map(x => moveName(x.id)), { x: W - 88, y: 2 });
+          if (pick >= 0) {
+            const gone = moveName(mon.moves[pick].id);
+            mon.moves[pick] = { id: mv, pp: MOVES[mv].pp, max: MOVES[mv].pp };
+            yield say(mon.nick + ' forgot ' + gone + ' and learned ' + moveName(mv) + '!');
+          }
+        }
+      }
+    }
+    const evo = DEX[mon.species].evo;
+    if (evo && mon.level >= evo.lv) {
+      yield say('What? ' + mon.nick + ' is evolving!');
+      yield anim(k => { B.meFlash = (k >> 1) % 2 === 0; return k > 50; });
+      B.meFlash = false;
+      const wasNick = mon.nick === mon.species;
+      mon.species = evo.to;
+      if (wasNick) mon.nick = evo.to;
+      const nm = statAt(DEX[mon.species].base.hp, mon.level, true);
+      mon.hp += nm - mon.maxhp; mon.maxhp = nm;
+      G.seen[evo.to] = 1; G.caught[evo.to] = 1;
+      audio.sfx.caught();
+      yield say('Congratulations! It evolved into ' + evo.to + '!');
+    }
+  }
+}
+
+function* throwBall(ballId) {
+  G.bag[ballId]--;
+  audio.sfx.ball();
+  yield say('You threw a ' + ITEMS[ballId].label + '!');
+  yield anim(k => {
+    B.ball = { x: 20 + k * 3, y: 80 - Math.sin(k / 30 * Math.PI) * 60 };
+    if (k >= 30) { B.ball = { x: 122, y: 22 }; B.foeHide = true; return true; }
+    return false;
+  });
+  const foe = B.foe;
+  const rate = DEX[foe.species].catch;
+  const statusBonus = foe.status === 'SLP' ? 2 : (foe.status ? 1.5 : 1);
+  const a = ((3 * foe.maxhp - 2 * foe.hp) * rate * ITEMS[ballId].rate * statusBonus) / (3 * foe.maxhp);
+  const p = Math.min(1, a / 255);
+  const shakeP = Math.pow(p, 0.25);
+  let shakes = 0;
+  for (let i = 0; i < 3; i++) { if (Math.random() < shakeP) shakes++; else break; }
+  for (let i = 0; i < shakes; i++) {
+    yield anim(k => {
+      B.ball.x = 122 + Math.round(Math.sin(k / 3) * 3);
+      if (k > 18) { B.ball.x = 122; return true; }
+      return false;
+    });
+    audio.sfx.ball();
+    yield waitF(8);
+  }
+  if (shakes >= 3 && Math.random() < Math.min(1, p * 1.15 + 0.05)) {
+    audio.sfx.caught();
+    yield say('Gotcha! ' + foe.nick + ' was caught!');
+    B.ball = null;
+    G.seen[foe.species] = 1;
+    if (giveMon(foe)) yield say(foe.nick + ' joined your team.');
+    else yield say('Your team is full, so it was released. Sorry!');
+    return true;
+  }
+  B.ball = null; B.foeHide = false;
+  audio.sfx.back();
+  yield say(shakes === 0 ? 'Oh no! It broke free instantly!'
+    : shakes === 1 ? 'Aww! It appeared to be caught!'
+    : 'Argh! So close too!');
+  return false;
+}
+
+function* chooseNext(forced) {
+  while (true) {
+    const pick = yield partyScreen(forced ? 'CHOOSE A MONSTER' : 'SWITCH TO?', m => m.hp > 0);
+    if (pick < 0) { if (forced) continue; return -1; }
+    if (G.party[pick].hp <= 0) continue;
+    if (G.party[pick] === B.me) { if (forced) continue; return -1; }
+    return pick;
+  }
+}
+function sendOutAnim(isPlayer) {
+  return anim(k => {
+    if (isPlayer) { B.meSlide = -60 + k * 4; if (B.meSlide >= 0) { B.meSlide = 0; return true; } }
+    else { B.foeSlide = 60 - k * 4; if (B.foeSlide <= 0) { B.foeSlide = 0; return true; } }
+    return false;
+  });
+}
+
+function* battleFlow(spec) {
+  const prevMode = G.mode, prevSong = audio.song;
+  G.mode = 'battle';
+  audio.play(spec.trainer ? (spec.trainer.boss ? 'boss' : 'battle') : 'battle');
+  const enemyTeam = spec.trainer
+    ? spec.trainer.team.map(([s, l]) => makeMon(s, l))
+    : [spec.wild];
+  let enemyIdx = 0;
+  B = {
+    foe: enemyTeam[0], me: null, foeShow: false, meShow: false,
+    foeHide: false, meHide: false, wild: !spec.trainer, run: 0
+  };
+  G.seen[B.foe.species] = 1;
+
+  yield anim(k => { ui.fade = k < 6 ? 5 : Math.max(0, 5 - (k - 6)); return k > 12; });
+  B.foeShow = true;
+  yield sendOutAnim(false);
+  if (spec.trainer) yield say(spec.trainer.name + ' wants to battle!');
+  else yield say('A wild ' + B.foe.nick + ' appeared!');
+
+  let mine = G.party.findIndex(alive);
+  if (mine < 0) { G.mode = prevMode; audio.play(prevSong); return false; }
+  B.me = G.party[mine];
+  B.meShow = true;
+  yield say('Go! ' + B.me.nick + '!');
+  yield sendOutAnim(true);
+
+  let result = null;
+  while (result === null) {
+    /* ---- player's choice ---- */
+    let playerAction = null;
+    while (!playerAction) {
+      const c = yield ask(['FIGHT', 'BAG', 'MON', 'RUN'], {
+        cols: 2, x: 76, y: H - 42, w: 84, cancel: false,
+        extra: () => {
+          window9(0, H - 42, 76, 42);
+          text(B.me.nick, 5, H - 32);
+          text('ACTION?', 5, H - 20);
+        }
+      });
+      if (c === 0) {
+        const usable = B.me.moves;
+        const labels = usable.map(mv => moveName(mv.id) + (mv.pp === 0 ? ' --' : ''));
+        const pick = yield ask(labels, {
+          x: 2, y: H - 42, w: 108,
+          extra: m => {
+            const mv = usable[m.i];
+            window9(112, H - 42, 48, 42);
+            text('PP', 118, H - 34);
+            text(mv.pp + '/' + mv.max, 118, H - 22);
+            text(MOVES[mv.id].type.slice(0, 6), 118, H - 12, 3);
+          }
+        });
+        if (pick < 0) continue;
+        if (usable[pick].pp <= 0) { yield say('No PP left for that move!'); continue; }
+        playerAction = { kind: 'move', move: usable[pick] };
+      } else if (c === 1) {
+        const id = yield bagScreen();
+        if (id === -1) continue;
+        if (ITEMS[id].kind === 'ball') {
+          if (!B.wild) { yield say('You cannot catch another trainer\'s monster!'); continue; }
+          playerAction = { kind: 'ball', id };
+        } else {
+          const used = yield* useItemFlow(id, true);
+          if (used) playerAction = { kind: 'item' };
+        }
+      } else if (c === 2) {
+        if (G.party.filter(alive).length <= 1) { yield say('No one else can battle.'); continue; }
+        const pick = yield* chooseNext(false);
+        if (pick < 0) continue;
+        mine = pick;
+        playerAction = { kind: 'switch', idx: pick };
+      } else if (c === 3) {
+        if (!B.wild) { yield say('No running from a trainer battle!'); continue; }
+        playerAction = { kind: 'run' };
+      }
+    }
+
+    /* ---- resolve ---- */
+    if (playerAction.kind === 'ball') {
+      const caught = yield* throwBall(playerAction.id);
+      if (caught) { result = 'caught'; break; }
+    } else if (playerAction.kind === 'switch') {
+      yield say('Come back, ' + B.me.nick + '!');
+      B.meHide = true;
+      B.me = G.party[playerAction.idx];
+      B.meHide = false;
+      yield say('Go! ' + B.me.nick + '!');
+      yield sendOutAnim(true);
+    }
+
+    const foeMove = pickFoeMove(B.foe, B.me);
+    const playerFirst = (() => {
+      if (playerAction.kind !== 'move') return true;
+      const pPri = MOVES[playerAction.move.id].priority || 0;
+      const fPri = MOVES[foeMove.id].priority || 0;
+      if (pPri !== fPri) return pPri > fPri;
+      const ps = monSpd(B.me), fs = monSpd(B.foe);
+      return ps === fs ? Math.random() < 0.5 : ps > fs;
+    })();
+
+    const doPlayer = function* () {
+      if (playerAction.kind === 'move' && B.me.hp > 0) yield* useMove(B.me, B.foe, playerAction.move, true);
+      if (playerAction.kind === 'run') {
+        B.run++;
+        const odds = 0.4 + 0.2 * B.run + (monSpd(B.me) > monSpd(B.foe) ? 0.3 : 0);
+        if (Math.random() < odds) { yield say('Got away safely!'); result = 'ran'; }
+        else yield say('Could not get away!');
+      }
+    };
+    const doFoe = function* () {
+      if (B.foe.hp > 0 && result === null) yield* useMove(B.foe, B.me, foeMove, false);
+    };
+
+    if (playerFirst) { yield* doPlayer(); if (result === null && B.foe.hp > 0) yield* doFoe(); }
+    else { yield* doFoe(); if (result === null && B.me.hp > 0) yield* doPlayer(); }
+    if (result !== null) break;
+
+    if (B.foe.hp > 0 && B.me.hp > 0) {
+      yield* endOfTurnStatus(B.me, true);
+      yield* endOfTurnStatus(B.foe, false);
+    }
+
+    /* ---- faints ---- */
+    if (B.foe.hp <= 0) {
+      audio.sfx.faint();
+      yield faintAnim(false);
+      yield say((B.wild ? 'Wild ' : 'Foe ') + B.foe.nick + ' fainted!');
+      yield* gainExp(B.me, B.foe);
+      enemyIdx++;
+      if (enemyIdx < enemyTeam.length) {
+        B.foe = enemyTeam[enemyIdx];
+        G.seen[B.foe.species] = 1;
+        B.foeHide = false;
+        yield say(spec.trainer.name + ' sent out ' + B.foe.nick + '!');
+        yield sendOutAnim(false);
+      } else { result = 'win'; break; }
+    }
+    if (B.me.hp <= 0) {
+      audio.sfx.faint();
+      yield faintAnim(true);
+      yield say(B.me.nick + ' fainted!');
+      if (!teamAlive()) { result = 'lose'; break; }
+      const pick = yield* chooseNext(true);
+      B.me = G.party[pick];
+      B.meHide = false;
+      yield say('Go! ' + B.me.nick + '!');
+      yield sendOutAnim(true);
+    }
+  }
+
+  G.party.forEach(m => { delete m.boostAtk; delete m.boostDef; });
+  yield fadeOut();
+  B = null;
+  G.mode = prevMode === 'battle' ? 'world' : prevMode;
+  audio.play(prevSong);
+  yield waitF(4);
+  yield fadeIn();
+
+  if (result === 'lose') { yield* whiteoutFlow(); return false; }
+  return result === 'win';
+}
+
+function pickFoeMove(foe, target) {
+  const usable = foe.moves.filter(m => m.pp > 0);
+  if (!usable.length) return { id: 'TACKLE', pp: 1, max: 1 };
+  // slight preference for whatever hurts the most
+  let best = usable[0], bestScore = -1;
+  usable.forEach(mv => {
+    const m = MOVES[mv.id];
+    let score = m.pow * typeMult(m.type, DEX[target.species].type);
+    if (!m.pow) score = 25;
+    score *= 0.7 + Math.random() * 0.6;
+    if (score > bestScore) { bestScore = score; best = mv; }
+  });
+  return best;
+}
+
+function* whiteoutFlow() {
+  yield say('You have no monsters left...');
+  yield say('You scramble back to the CENTER.');
+  yield fadeOut();
+  healParty();
+  enterMap('center', 5, 3, 'up');
+  updateCamera();
+  yield waitF(10);
+  yield fadeIn();
+  yield say('You and your team are patched up.');
+}
+
+/* ============================================================
+   Title screen + boot
+   ============================================================ */
+const title = { i: 0, items: [] };
+function drawTitle() {
+  clear(0);
+  rect(0, 0, W, 52, 1);
+  for (let x = 0; x < W; x += 8) rect(x, 50 + ((x >> 3) % 2), 8, 2, 2);
+  // logo
+  const t1 = 'POCKET', t2 = 'MONSTERS';
+  textBig(t1, (W - bigW(t1, 2)) / 2, 6, 2, 3);
+  textBig(t2, (W - bigW(t2, 2)) / 2, 20, 2, 3);
+  window9((W - 96) / 2, 36, 96, 14);
+  text('VERDANT', (W - textW('VERDANT')) / 2, 40);
+  // a starter trio poses on the title
+  ctx.drawImage(spriteFor('FLAREPUP'), 4, 54);
+  ctx.drawImage(spriteFor('AQUAFIN'), 56, 54);
+  ctx.drawImage(spriteFor('LEAFLING'), 108, 54);
+  title.items.forEach((it, i) => {
+    const y = 106 + i * 12;
+    text(it, 54, y);
+    if (i === title.i) text('>', 44, y);
+  });
+  if ((frameCount >> 5) % 2) text('(c) 199X  A ONE-FILE GAME', 8, H - 10, 2);
+}
+function updateTitle() {
+  const n = title.items.length;
+  if (hit('up')) { title.i = (title.i - 1 + n) % n; audio.sfx.cursor(); }
+  if (hit('down')) { title.i = (title.i + 1) % n; audio.sfx.cursor(); }
+  if (hit('a') || hit('start')) {
+    audio.sfx.select();
+    const choice = title.items[title.i];
+    if (choice === 'CONTINUE') {
+      if (loadGame()) { G.mode = 'world'; enterMap(G.map, G.px, G.py, G.dir); }
+    } else {
+      G.mode = 'world';
+      G.party = []; G.bag = {}; G.money = 1500; G.flags = {}; G.seen = {}; G.caught = {};
+      bagAdd('POTION', 1);
+      enterMap('home', 4, 4, 'down');
+      runScript(introFlow());
+    }
+  }
+}
+function* introFlow() {
+  yield say('POCKET MONSTERS: VERDANT');
+  yield say('Your room. Your bed. Your very late start to the day.');
+  yield say('PROF. HOLLY has been waiting at the lab across town.');
+  yield say('TIP: press START for your menu, and A to talk, read and pick things up.');
+}
+
+/* ---------------- main loop ---------------- */
+function step() {
+  frameCount++;
+  audio.tick();
+  if (G.mode === 'title') updateTitle();
+  else if (scriptRunning()) updateScript();
+  else if (G.mode === 'world') updateWorld();
+  else updateScript();
+  if (G.mode !== 'title') G.playtime++;
+  endFrame();
+}
+function render() {
+  if (G.mode === 'title') drawTitle();
+  else if (G.mode === 'battle') drawBattle();
+  else { updateCamera(); drawWorld(); }
+  if (task && task.t === 'screen') task.draw(task);
+  drawBox();
+  drawMenu();
+  if (ui.menu && ui.menu.o && ui.menu.o.extra) ui.menu.o.extra(ui.menu);
+  if (ui.overlay) ui.overlay();
+  drawFade(ui.fade);
+}
+
+let acc = 0, last = 0;
+function loop(ts) {
+  requestAnimationFrame(loop);
+  if (!last) last = ts;
+  let dt = ts - last; last = ts;
+  if (dt > 250) dt = 250;
+  acc += dt;
+  let guard = 0;
+  while (acc >= 1000 / 60 && guard++ < 5) { acc -= 1000 / 60; step(); }
+  render();
+}
+
+function boot() {
+  buildTiles();
+  buildBall();
+  title.items = hasSave() ? ['CONTINUE', 'NEW GAME'] : ['NEW GAME'];
+  requestAnimationFrame(loop);
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(boot, boot);
+else boot();
+</script>
+</body>
+</html>
